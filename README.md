@@ -4,7 +4,8 @@ This folder contains the public, encrypted version of the dashboard, ready to ho
 
 ## What's in here
 
-- `index.html` — the dashboard (97 KB, self-contained). PII (name, email, phone, full resume) is AES-256-GCM encrypted; password unlocks on load.
+- `index.html` — the dashboard (~100 KB, self-contained). PII (name, email, phone, full resume) is AES-256-GCM encrypted; password unlocks on load.
+- `linkedin-bookmarklet.md` — the LinkedIn → Dashboard bookmarklet (1-click pull any LinkedIn job into Sanni's Prep modal). See that file for setup.
 - `README.md` — this file.
 
 ## The password
@@ -68,6 +69,10 @@ A message like:
 > URL: https://YOUR_USERNAME.github.io/sanni-jobs/
 > Password: kale-jobs-2026
 > Star ⭐ anything that looks interesting. Once you actually apply, hit "Mark as applied" so the Tracker tab tracks it.
+
+### 7. Set up the LinkedIn bookmarklet (optional but recommended)
+
+See **`linkedin-bookmarklet.md`** in this folder. Two minutes to install, lets Sanni pull any LinkedIn job into the dashboard's Prep modal with one click — same cover letter / tailored resume / recruiter outreach prompts work for LinkedIn jobs too. **Important:** before sharing the bookmarklet with Sanni, edit the `YOUR_DASHBOARD_URL_HERE` placeholder in the bookmarklet code to your actual GitHub Pages URL.
 
 ## Updating the dashboard later
 
