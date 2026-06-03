@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dear Sanni — US Job Tracker</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-2: #0f1729;
+    --bg-3: #131c2e;
+    --border: #1e293b;
+    --border-2: #334155;
+    --text: #e2e8f0;
+    --text-2: #94a3b8;
+    --text-3: #64748b;
+    --accent: #42DFA0;
+    --accent-2: #1ECC83;
+    --accent-bg: #064e3b;
+    --warn: #fcd34d;
+    --warn-bg: #422006;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+  header {
+    padding: 24px 32px 18px;
+    background: linear-gradient(135deg, #0f1729 0%, #0a0e1a 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub { color: var(--text-3); font-size: 13px; margin-top: 6px; }
+  .progress-wrap { height: 2px; background: var(--bg-2); position: relative; }
+  .progress {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    width: 0;
+    transition: width 0.25s ease;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .controls {
+    display: flex; gap: 10px; padding: 14px 32px;
+    background: var(--bg-2); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; align-items: center;
+  }
+  input, select, button {
+    background: var(--bg-3); color: var(--text);
+    border: 1px solid var(--border-2); border-radius: 6px;
+    padding: 7px 11px; font-size: 13px; font-family: inherit;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  input::placeholder { color: var(--text-3); }
+  input:focus, select:focus {
+    outline: none; border-color: var(--accent-2);
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent-2); color: var(--accent); }
+  .stats {
+    color: var(--text-3); font-size: 12px;
+    margin-left: auto; font-variant-numeric: tabular-nums;
+  }
+  .stats b { color: var(--accent); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 11px 16px;
+    background: var(--bg-2); color: var(--text-2);
+    font-weight: 500; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+    position: sticky; top: 0; z-index: 1;
+    white-space: nowrap;
+  }
+  thead th:hover { color: var(--accent); }
+  thead th.sorted { color: var(--accent); }
+  thead th .arr { opacity: 0.6; margin-left: 4px; font-size: 10px; }
+  tbody tr {
+    border-bottom: 1px solid var(--bg-3);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--bg-2); }
+  td { padding: 12px 16px; vertical-align: top; }
+  .title { font-weight: 500; color: var(--text); max-width: 480px; }
+  .title a { color: inherit; text-decoration: none; }
+  .title a:hover { color: var(--accent); text-decoration: underline; }
+  .company { color: var(--text-2); white-space: nowrap; }
+  .loc { color: var(--text-3); font-size: 12px; max-width: 240px; }
+  .score {
+    display: inline-block; padding: 3px 9px;
+    border-radius: 4px; font-weight: 600;
+    font-size: 12px; font-variant-numeric: tabular-nums;
+    min-width: 32px; text-align: center;
+  }
+  .score-high { background: var(--accent-bg); color: var(--accent); }
+  .score-med  { background: var(--warn-bg); color: var(--warn); }
+  .score-low  { background: var(--bg-3); color: var(--text-2); }
+  .ats {
+    display: inline-block; padding: 1px 6px;
+    border-radius: 3px; font-size: 10px;
+    background: var(--bg-3); color: var(--text-3);
+    margin-left: 6px; vertical-align: middle;
+  }
+  .matched-kw {
+    display: inline-block; background: #134e4a;
+    color: #5eead4; padding: 1px 7px; border-radius: 3px;
+    font-size: 10px; margin: 1px 3px 1px 0;
+    font-weight: 500;
+  }
+  .empty { padding: 60px; text-align: center; color: var(--text-3); }
+  .footer {
+    padding: 16px 32px; color: var(--text-3); font-size: 11px;
+    border-top: 1px solid var(--border); margin-top: 20px;
+    line-height: 1.6;
+  }
+  .footer a { color: var(--text-2); }
+  .errors {
+    padding: 8px 32px; font-size: 11px; color: var(--text-3);
+    background: var(--bg-2); border-bottom: 1px solid var(--border);
+    display: none;
+  }
+  .errors.show { display: block; }
+
+  /* Prep button per row */
+  .prep-btn {
+    display: inline-block; padding: 3px 9px; margin-left: 8px;
+    font-size: 11px; font-weight: 500;
+    background: var(--bg-3); color: var(--accent);
+    border: 1px solid var(--border-2); border-radius: 4px;
+    cursor: pointer; text-decoration: none;
+  }
+  .prep-btn:hover { background: var(--accent-bg); border-color: var(--accent); }
+
+  /* Modal */
+  .modal-bd {
+    position: fixed; inset: 0; background: rgba(2, 6, 18, 0.78);
+    backdrop-filter: blur(4px); z-index: 99; display: none;
+  }
+  .modal-bd.show { display: block; }
+  .modal {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: var(--bg-2); border: 1px solid var(--border-2);
+    border-radius: 12px;
+    width: min(820px, 92vw); max-height: 88vh;
+    display: none; flex-direction: column;
+    z-index: 100;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px var(--accent-bg);
+  }
+  .modal.show { display: flex; }
+  .modal-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+  }
+  .modal-head h2 {
+    margin: 0; font-size: 17px; font-weight: 600; color: var(--text);
+    line-height: 1.35;
+  }
+  .modal-head .meta { color: var(--text-3); font-size: 12px; margin-top: 5px; }
+  .modal-head .close {
+    background: transparent; border: none; color: var(--text-3);
+    font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
+  }
+  .modal-head .close:hover { color: var(--accent); }
+  .modal-body {
+    padding: 18px 24px 22px;
+    overflow-y: auto; flex: 1;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px;
+  }
+  .panel h3 {
+    margin: 0 0 10px; font-size: 11px; font-weight: 600;
+    color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .copy-btn {
+    background: var(--accent-bg); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 6px;
+    padding: 8px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .copy-btn:hover { background: var(--accent); color: var(--bg); }
+  .copy-btn.copied { background: var(--accent); color: var(--bg); }
+  .copy-btn.small {
+    padding: 4px 10px; font-size: 11px;
+    background: var(--bg-3); color: var(--text-2);
+    border: 1px solid var(--border-2); font-weight: 500;
+  }
+  .copy-btn.small:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .field {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 0; border-bottom: 1px solid var(--bg-3);
+  }
+  .field:last-child { border-bottom: none; }
+  .field .label {
+    flex: 0 0 130px; font-size: 11px; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding-top: 5px;
+  }
+  .field .value {
+    flex: 1; color: var(--text); font-size: 13px; line-height: 1.5;
+    word-break: break-word; padding-top: 3px;
+  }
+  .field .value.muted { color: var(--text-3); font-style: italic; }
+  .jd-preview {
+    max-height: 200px; overflow-y: auto;
+    font-size: 12px; line-height: 1.55; color: var(--text-2);
+    white-space: pre-wrap;
+    background: var(--bg);
+    padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .apply-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    color: var(--bg); font-weight: 600; font-size: 14px;
+    padding: 11px 20px; border-radius: 8px; border: none;
+    text-decoration: none; cursor: pointer;
+    transition: filter 0.15s;
+  }
+  .apply-cta:hover { filter: brightness(1.1); }
+  .modal-foot {
+    padding: 14px 24px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .modal-foot .hint { color: var(--text-3); font-size: 11px; }
+  .prompt-explainer {
+    color: var(--text-3); font-size: 12px; line-height: 1.5; margin: 0 0 12px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 2px; padding: 0 32px;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 12px 18px; cursor: pointer;
+    color: var(--text-3); font-size: 13px; font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+  .tab:hover { color: var(--text-2); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab .pill {
+    display: inline-block;
+    background: var(--bg-3); color: var(--text-2);
+    padding: 1px 7px; border-radius: 10px;
+    font-size: 11px; margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tab.active .pill { background: var(--accent-bg); color: var(--accent); }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Star icon */
+  .star {
+    cursor: pointer; user-select: none;
+    color: var(--text-3); font-size: 16px;
+    background: none; border: none; padding: 0 4px;
+    transition: color 0.15s, transform 0.15s;
+    line-height: 1;
+  }
+  .star:hover { color: var(--warn); transform: scale(1.15); }
+  .star.on { color: var(--warn); }
+
+  /* Applied badge in search */
+  .applied-tag {
+    display: inline-block; padding: 2px 8px;
+    background: var(--accent-bg); color: var(--accent);
+    border-radius: 4px; font-size: 10px; font-weight: 600;
+    margin-left: 8px; text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Status badges (tracker) */
+  .status {
+    display: inline-block; padding: 3px 9px;
+    border-radius: 4px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    cursor: pointer; user-select: none;
+    border: 1px solid transparent;
+  }
+  .status:hover { filter: brightness(1.15); }
+  .status-applied   { background: #1e293b; color: #94a3b8; border-color: #334155; }
+  .status-screen    { background: #422006; color: #fcd34d; border-color: #78350f; }
+  .status-interview { background: #422006; color: #fdba74; border-color: #9a3412; }
+  .status-onsite    { background: #3b0764; color: #c4b5fd; border-color: #5b21b6; }
+  .status-offer     { background: #064e3b; color: #6ee7b7; border-color: #047857; box-shadow: 0 0 12px rgba(110,231,183,0.3); }
+  .status-rejected  { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
+  .status-ghosted   { background: #1e293b; color: #475569; border-color: #1e293b; opacity: 0.7; }
+  .status-withdrawn { background: #1e293b; color: #475569; border-color: #1e293b; opacity: 0.7; }
+
+  /* Stat cards on tracker */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px; padding: 20px 32px;
+  }
+  .stat-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .stat-card .num {
+    font-size: 26px; font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .stat-card .num.dim { color: var(--text-2); }
+  .stat-card .label {
+    font-size: 11px; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-top: 4px;
+  }
+  .stat-card .sub2 {
+    font-size: 11px; color: var(--text-3); margin-top: 6px;
+  }
+
+  /* Tracker controls + table */
+  .tracker-controls {
+    display: flex; gap: 10px; padding: 0 32px 14px;
+    flex-wrap: wrap; align-items: center;
+  }
+  .tracker-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tracker-table thead th {
+    text-align: left; padding: 11px 16px;
+    background: var(--bg-2); color: var(--text-2);
+    font-weight: 500; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .tracker-table tbody tr {
+    border-bottom: 1px solid var(--bg-3);
+  }
+  .tracker-table tbody tr:hover { background: var(--bg-2); }
+  .tracker-table td { padding: 12px 16px; vertical-align: middle; }
+  .tracker-table .actions { white-space: nowrap; }
+  .icon-btn {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-3); padding: 4px 6px;
+    font-size: 13px; border-radius: 4px;
+  }
+  .icon-btn:hover { background: var(--bg-3); color: var(--accent); }
+  .icon-btn.del:hover { color: #fca5a5; }
+  .days-cell { color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .days-stale { color: var(--warn); }
+  .followup-input, .notes-input, .text-input {
+    background: var(--bg-3); color: var(--text);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 8px; font-size: 12px; font-family: inherit;
+  }
+  .followup-input { width: 130px; }
+  .notes-input { width: 100%; min-height: 50px; }
+
+  /* Tracker editor inline form */
+  .tracker-empty {
+    padding: 60px 32px; text-align: center; color: var(--text-3);
+  }
+  .tracker-empty h3 { color: var(--text-2); margin: 0 0 8px; }
+
+  /* Modal: action button row */
+  .action-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+  }
+  .action-row .copy-btn { flex: 0 0 auto; }
+  .research-links {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid var(--bg-3);
+  }
+  .research-links a {
+    font-size: 11px; color: var(--text-3);
+    text-decoration: none; padding: 4px 8px;
+    background: var(--bg-3); border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .research-links a:hover { color: var(--accent); border-color: var(--accent); }
+  .tracker-success {
+    background: var(--accent-bg); color: var(--accent);
+    padding: 10px 14px; border-radius: 6px; font-size: 12px;
+    margin-top: 12px; display: none;
+    border: 1px solid var(--accent);
+  }
+  .tracker-success.show { display: block; }
+
+  /* Fresh-since-last-visit banner */
+  .fresh-banner {
+    margin: 16px 32px 0;
+    background: linear-gradient(135deg, rgba(66, 223, 160, 0.10), rgba(30, 204, 131, 0.04));
+    border: 1px solid var(--accent-bg);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: none;
+  }
+  .fresh-banner.show { display: block; }
+  .fresh-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .fresh-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .fresh-actions { display: flex; gap: 6px; align-items: center; }
+  .fresh-actions button {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-3); font-size: 12px; padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .fresh-actions button:hover { color: var(--accent); background: var(--bg); }
+  .fresh-actions .fresh-dismiss { font-size: 16px; }
+  .fresh-list { display: flex; flex-direction: column; gap: 6px; }
+  .fresh-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .fresh-row .score { flex: 0 0 36px; }
+  .fresh-row .text { flex: 1; min-width: 0; }
+  .fresh-row .text .t {
+    color: var(--text); font-weight: 500;
+    text-decoration: none;
+  }
+  .fresh-row .text .t:hover { color: var(--accent); }
+  .fresh-row .text .c {
+    color: var(--text-3); font-size: 12px; margin-top: 2px;
+  }
+  .fresh-row .prep-btn { margin-left: 0; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-2); border: 1px solid var(--accent);
+    color: var(--accent); padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="gate" style="position:fixed;inset:0;background:#0a0e1a;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="background:#0f1729;border:1px solid #334155;border-radius:12px;padding:40px 36px;width:min(420px,90vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+    <div style="font-size:32px;margin-bottom:8px;">⭐</div>
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;background:linear-gradient(135deg,#1ECC83,#42DFA0);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-0.01em;">Dear Sanni</h1>
+    <p style="margin:0 0 24px;color:#94a3b8;font-size:13px;line-height:1.5;">Your US job-search dashboard.<br>Enter password to unlock.</p>
+    <input type="password" id="gate-pw" placeholder="Password" autofocus style="box-sizing:border-box;width:100%;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;">
+    <button id="gate-submit" style="margin-top:12px;width:100%;background:linear-gradient(135deg,#1ECC83,#42DFA0);color:#0a0e1a;border:none;border-radius:6px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Unlock</button>
+    <div id="gate-error" style="margin-top:12px;color:#fca5a5;font-size:12px;min-height:16px;"></div>
+  </div>
+</div>
+
+<header>
+  <h1>Dear Sanni — US Job Search</h1>
+  <div class="sub">
+    Live feed across <span id="company-count">…</span> companies on Greenhouse + Lever.
+    Scored against your actuarial / quant / risk / treasury background.
+    E-3 visa: already on your resume — recruiters who don't know about it are filtered out at the cover-letter stage.
+  </div>
+</header>
+<div class="progress-wrap"><div class="progress" id="progress"></div></div>
+<div class="errors" id="errors"></div>
+
+<nav class="tabs">
+  <div class="tab active" data-view="search">🔍 Search <span class="pill" id="tab-pill-search">…</span></div>
+  <div class="tab" data-view="tracker">📊 Tracker <span class="pill" id="tab-pill-tracker">0</span></div>
+  <div class="tab" data-view="saved">⭐ Saved <span class="pill" id="tab-pill-saved">0</span></div>
+</nav>
+
+<div id="view-search" class="view active">
+<div class="fresh-banner" id="fresh-banner">
+  <div class="fresh-header">
+    <div class="fresh-title">🆕 <span id="fresh-count">…</span> new postings since your last visit (<span id="fresh-date">…</span>)</div>
+    <div class="fresh-actions">
+      <button id="fresh-show-all">Filter table to just these →</button>
+      <button id="fresh-dismiss" class="fresh-dismiss" title="Dismiss">✕</button>
+    </div>
+  </div>
+  <div class="fresh-list" id="fresh-list"></div>
+</div>
+<div class="controls">
+  <input id="search" placeholder="Search title, company, location…" style="width: 280px;">
+  <select id="loc-filter">
+    <option value="">All US locations</option>
+    <option value="remote">Remote-friendly only</option>
+    <option value="ny">NYC area</option>
+    <option value="sf">SF Bay Area</option>
+    <option value="boston">Boston</option>
+    <option value="chicago">Chicago</option>
+    <option value="hartford">Hartford / CT</option>
+    <option value="texas">Texas</option>
+  </select>
+  <select id="role-filter">
+    <option value="">All roles</option>
+    <option value="actuar">Actuarial</option>
+    <option value="quant">Quant</option>
+    <option value="risk">Risk</option>
+    <option value="model">Model validation</option>
+    <option value="treasury">Treasury</option>
+    <option value="valuation">Valuation</option>
+    <option value="data">Data analyst / scientist</option>
+    <option value="audit">Audit</option>
+    <option value="invest">Investment / portfolio</option>
+  </select>
+  <select id="min-score">
+    <option value="0">Min score: 0 (everything)</option>
+    <option value="5" selected>Min score: 5</option>
+    <option value="10">Min score: 10</option>
+    <option value="20">Min score: 20 (strong matches)</option>
+  </select>
+  <label style="display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 12px; cursor: pointer;">
+    <input type="checkbox" id="hide-senior" checked style="margin: 0;">
+    Hide Senior+ titles
+  </label>
+  <button id="reload">↻ Reload</button>
+  <span class="stats" id="stats">Loading…</span>
+</div>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th data-sort="score" class="sorted">Score <span class="arr">↓</span></th>
+      <th data-sort="title">Title</th>
+      <th data-sort="company">Company</th>
+      <th data-sort="location">Location</th>
+      <th data-sort="updated">Posted</th>
+    </tr>
+  </thead>
+  <tbody id="rows">
+    <tr><td colspan="5" class="empty">Fetching jobs from career pages…</td></tr>
+  </tbody>
+</table>
+</div>
+</div><!-- /view-search -->
+
+<div id="view-tracker" class="view">
+  <div class="stat-grid" id="stat-grid"></div>
+  <div class="tracker-controls">
+    <select id="tracker-status-filter">
+      <option value="">All statuses</option>
+      <option value="active" selected>Active pipeline (excl. rejected/ghosted)</option>
+      <option value="applied">Applied</option>
+      <option value="screen">Screen</option>
+      <option value="interview">Interview</option>
+      <option value="onsite">Onsite</option>
+      <option value="offer">Offer</option>
+      <option value="rejected">Rejected</option>
+      <option value="ghosted">Ghosted</option>
+    </select>
+    <button id="add-manual">+ Add application manually</button>
+    <button id="export-csv">↓ Export CSV</button>
+    <span class="stats" id="tracker-stats" style="margin-left: auto;"></span>
+  </div>
+  <div class="table-wrap" id="tracker-table-wrap">
+    <table class="tracker-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Role</th>
+          <th>Company</th>
+          <th>Applied</th>
+          <th>Days</th>
+          <th>Next follow-up</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tracker-rows"></tbody>
+    </table>
+  </div>
+</div><!-- /view-tracker -->
+
+<div id="view-saved" class="view">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Score</th>
+          <th>Title</th>
+          <th>Company</th>
+          <th>Location</th>
+          <th>Posted</th>
+        </tr>
+      </thead>
+      <tbody id="saved-rows"></tbody>
+    </table>
+  </div>
+</div><!-- /view-saved -->
+
+<!-- Apply Pack Modal -->
+<div class="modal-bd" id="modal-bd"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="modal-head">
+    <div>
+      <h2 id="m-title">—</h2>
+      <div class="meta" id="m-meta">—</div>
+    </div>
+    <button class="close" id="m-close" aria-label="Close">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="panel">
+      <h3>Step 1 — Three Tailored Prompts</h3>
+      <p class="prompt-explainer">
+        Each button below copies a complete prompt ready to paste into <b>claude.ai</b> (or ChatGPT).
+        Each one bundles the JD + your resume + specific instructions and your E-3 visa framing.
+      </p>
+      <div class="action-row">
+        <button class="copy-btn" id="copy-prompt">📝 Cover Letter + Short Answers</button>
+        <button class="copy-btn" id="copy-resume-prompt">📄 Tailored Resume Rewrite</button>
+        <button class="copy-btn" id="copy-recruiter-prompt">💬 Recruiter Outreach Message</button>
+      </div>
+      <div class="research-links">
+        <span style="color: var(--text-3); font-size: 11px;">Research:</span>
+        <a id="link-glassdoor" target="_blank" rel="noopener">Glassdoor ↗</a>
+        <a id="link-levels" target="_blank" rel="noopener">Levels.fyi ↗</a>
+        <a id="link-linkedin" target="_blank" rel="noopener">LinkedIn company ↗</a>
+        <a id="link-blind" target="_blank" rel="noopener">Blind ↗</a>
+      </div>
+      <div class="tracker-success" id="tracker-success">✓ Added to your tracker (Tracker tab)</div>
+    </div>
+
+    <div class="panel">
+      <h3>Step 2 — Standard Application Info</h3>
+      <div class="field">
+        <div class="label">Full name</div>
+        <div class="value" id="info-name"></div>
+        <button class="copy-btn small" data-copy="info-name">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Email</div>
+        <div class="value" id="info-email"></div>
+        <button class="copy-btn small" data-copy="info-email">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Phone</div>
+        <div class="value" id="info-phone"></div>
+        <button class="copy-btn small" data-copy="info-phone">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">LinkedIn</div>
+        <div class="value" id="info-linkedin"></div>
+        <button class="copy-btn small" data-copy="info-linkedin">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Location</div>
+        <div class="value" id="info-location"></div>
+        <button class="copy-btn small" data-copy="info-location">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Authorized to work?</div>
+        <div class="value" id="info-authorized"></div>
+        <button class="copy-btn small" data-copy="info-authorized">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Need sponsorship?</div>
+        <div class="value" id="info-sponsor-short"></div>
+        <button class="copy-btn small" data-copy="info-sponsor-short">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">E-3 visa explainer</div>
+        <div class="value" id="info-sponsor-long"></div>
+        <button class="copy-btn small" data-copy="info-sponsor-long">Copy long</button>
+      </div>
+      <div class="field">
+        <div class="label">Earliest start</div>
+        <div class="value" id="info-start"></div>
+        <button class="copy-btn small" data-copy="info-start">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Notice period</div>
+        <div class="value" id="info-notice"></div>
+        <button class="copy-btn small" data-copy="info-notice">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Relocation</div>
+        <div class="value" id="info-reloc"></div>
+        <button class="copy-btn small" data-copy="info-reloc">Copy</button>
+      </div>
+      <div class="field">
+        <div class="label">Salary expectation</div>
+        <div class="value muted" id="info-salary">Set per role — see suggested range in modal hint</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Step 3 — Job Description</h3>
+      <div class="jd-preview" id="m-jd">—</div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="copy-btn small" id="m-add-tracker">+ Mark as applied (add to tracker)</button>
+    <a class="apply-cta" id="m-apply" target="_blank" rel="noopener">Open application page ↗</a>
+  </div>
+</div>
+
+<!-- Manual-add modal for tracker -->
+<div class="modal-bd" id="add-modal-bd"></div>
+<div class="modal" id="add-modal" role="dialog" aria-modal="true" style="width: min(560px, 92vw);">
+  <div class="modal-head">
+    <div><h2>Add application manually</h2><div class="meta">For jobs you applied to outside this dashboard.</div></div>
+    <button class="close" id="am-close" aria-label="Close">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="field"><div class="label">Company</div><input class="text-input" id="am-company" style="flex:1" placeholder="e.g., Prudential"></div>
+    <div class="field"><div class="label">Title</div><input class="text-input" id="am-title" style="flex:1" placeholder="e.g., Senior Actuarial Analyst"></div>
+    <div class="field"><div class="label">Location</div><input class="text-input" id="am-location" style="flex:1" placeholder="e.g., New York, NY"></div>
+    <div class="field"><div class="label">URL</div><input class="text-input" id="am-url" style="flex:1" placeholder="https://…"></div>
+    <div class="field"><div class="label">Applied date</div><input type="date" class="text-input" id="am-date" style="flex:1"></div>
+    <div class="field"><div class="label">Status</div>
+      <select id="am-status" class="text-input" style="flex:1">
+        <option value="applied">Applied</option>
+        <option value="screen">Screen</option>
+        <option value="interview">Interview</option>
+        <option value="onsite">Onsite</option>
+        <option value="offer">Offer</option>
+        <option value="rejected">Rejected</option>
+        <option value="ghosted">Ghosted</option>
+      </select>
+    </div>
+    <div class="field"><div class="label">Notes</div><textarea class="text-input notes-input" id="am-notes" style="flex:1" placeholder="Recruiter contact, referrer, etc."></textarea></div>
+  </div>
+  <div class="modal-foot">
+    <button class="copy-btn small" id="am-cancel">Cancel</button>
+    <button class="copy-btn" id="am-save">Save to tracker</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="footer">
+  v1.1 · Built <span id="built-date"></span> · Data fetched directly from each company's public ATS API on every page load.
+  Tokens that 404 are silently skipped (companies move ATS providers). Open the browser console to see fetch errors.
+  <br>
+  Sources: <a href="https://developers.greenhouse.io/job-board.html" target="_blank">Greenhouse Job Board API</a> ·
+  <a href="https://github.com/lever/postings-api" target="_blank">Lever Postings API</a>
+</div>
+
+<script>
+// =====================================================
+// SANNI'S PROFILE — used for application chips + prompt
+// =====================================================
+// ===== ENCRYPTED PII (decrypted via password gate) =====
+const ENCRYPTED = {
+  salt: "jeId5mNOY856Epj6p3zQIQ==",
+  iters: 200000,
+  sanni: { iv: "OcMxyhv4C5btBTFW", ct: "M2GvW/9cvEjPMK+eQ4JvRcf6QiomwcHMWS15+glj6O6GDavUlFO7z12/DNSMyxNjyaNuWy1C7pCzZsHhZkm5AGpRESDRd6Jwc00KaipGH5YBZa7IXnZ0b5aBldPZPG6UbK5ACc47LYEQTS9eEMb0JUcuiXhxwdFDGR0vwnZh2e0qu59iiYIZgBlxYb9FpU7RA3PlxBfRPLV5oNhjqw4X/kzIaMWToJzHGVtUy2iycAiWAkQzO/udZdbOFAOkbQzcqP4suFIkJXQzbQ2VyKzaatdTe6jei0V2QFY6fpR4LhnKxGPqffVCakJ5BkYyo2LicUNcWO8E+yCXuXjjSK5Nc7FHNpRgo4/q7VUW/KyOeelwgvzEOVOHSkxHbwe0dys2YXmUxYot23WpZ9uBHNq9/w24qzD6j3nTphIM+qWIOfqJdtGOZFnLO3G9wzouQGk9CCkUbvr+2dDF7FeeBPlWBkyrYM3mWM/3TZ33potpAjHRoTePI0V7QqC7eqPXvySNKdOAB2bPiU8ez17FQHNabOpNrIcYmLCii7z08PFPDBDKPD262qEawux9SyA6oStUsPviEF3B2zU7YRsi8YHzqvv6PNIwW6m75VO2vcZEK6DZkHUJ8BxD4RDcgrZlC1RA6sywZVV+rRGKtY846HMr9Cp9F6BLIELdaS+JmlZzCHmNBqiuMLN7svVh5uyxqeDEwGiE2rOgBBYz06VjY/lS3aBDX0Vje1BRKcmHevjVZMkv7xYlRIN6Of9c0UsPm8IKZYGxQQFVXh3R4Z2WsExSPuGcjxDMJLtXexeBlyniHUoZVmzBuHIjLck2CTysD6tSN/Wp4LnAQ6Oclat3UZtAM4TZwkZri8WCyvZLungPwR1HtoU55Qx+87juyyK2CgIT506aaRN+JXwn61PIuWV8/bKlybS0V6dqUhqJsuKkYDD584tHIQczKxsJSF+RKAg+0yFTAm0XLU7PZfeTR67j1vOOAfuA2BXL4IfFt4RG3t9nn2YWbzqiaw7yWIu9DUcoDem29WiBX/7N0NRKKTkVKGVGxALvat45VTNpS4ir3o/tsemgT+QAFqSpkgHdOINrrBf6MgpCf/3gylUGD1hLbWS8Ncb1WIahtpBlnWFaEYF8MYBupx6QQKa1Lv5IhuneJbUBtD8bzJ/5w18me7UltwQhUWSaCvGO/k8mzh1h0fD3jyaI6fa8rK9XXwSdMJND/YPTFFiPFSJyVNM00YH98AJkiCCHguG0R+8W3Xje+dW4HQ7ByCtqtPnOagEzfUuWMTL7GUOcuZnAxjytZY00tNHiEcP2dQMh8G1SAI0qar62sXZuLoX2JnNwfdp9DxPjXJ3p+L/GqGBZUAB0KRujFXrTMGjjXke+gtIuNZ+sfFCYdscoy0H/ikb1oXg+C7X+h1rmKYd86dd14ClihX8Z0sXBe/S1h1XW7Ftrz99B+TAoS/h6EHuZ7jkne5C1CFVmyTgY1XDYWQx6CoUqWoJV9m0R" },
+  resume: { iv: "nfA2FyCURcqyzDu5", ct: "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" },
+};
+let SANNI = null;
+let SANNI_RESUME = null;
+
+function _b64ToBytes(s) {
+  const bin = atob(s); const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+async function _deriveKey(password) {
+  const baseKey = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(password),
+    { name: "PBKDF2" }, false, ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: _b64ToBytes(ENCRYPTED.salt), iterations: ENCRYPTED.iters, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false, ["decrypt"]
+  );
+}
+async function _decryptField(key, field) {
+  const pt = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: _b64ToBytes(field.iv) },
+    key, _b64ToBytes(field.ct)
+  );
+  return new TextDecoder().decode(pt);
+}
+async function unlockWithPassword(password) {
+  const k = await _deriveKey(password);
+  const [sanniJson, resumeText] = await Promise.all([
+    _decryptField(k, ENCRYPTED.sanni),
+    _decryptField(k, ENCRYPTED.resume),
+  ]);
+  SANNI = JSON.parse(sanniJson);
+  SANNI_RESUME = resumeText;
+}
+
+
+// =====================================================
+// COMPANY LIST — curated for Sanni's actuarial/quant/risk profile
+// Tokens are best-guess from public job boards. 404s are tolerated.
+// =====================================================
+const COMPANIES = [
+  // ---------- INSURTECH (highest match) ----------
+  { name: "Lemonade",        ats: "greenhouse", token: "lemonade" },
+  { name: "Root Insurance",  ats: "greenhouse", token: "rootinsurance" },
+  { name: "Hippo",           ats: "greenhouse", token: "hippo" },
+  { name: "Ethos Life",      ats: "greenhouse", token: "ethoslife" },
+  { name: "Coalition",       ats: "greenhouse", token: "coalitioninc" },
+  { name: "Newfront",        ats: "greenhouse", token: "newfront" },
+  { name: "Vouch Insurance", ats: "greenhouse", token: "vouchinsurance" },
+  { name: "Pie Insurance",   ats: "greenhouse", token: "pieinsurance" },
+  { name: "Branch Insurance",ats: "greenhouse", token: "branchinsurance" },
+  { name: "Openly",          ats: "greenhouse", token: "openly" },
+  { name: "Kin Insurance",   ats: "greenhouse", token: "kininsurance" },
+  { name: "Next Insurance",  ats: "greenhouse", token: "nextinsurance" },
+  { name: "Clearcover",      ats: "greenhouse", token: "clearcover" },
+  { name: "Bestow",          ats: "greenhouse", token: "bestow" },
+  { name: "Ladder Life",     ats: "greenhouse", token: "ladderlife" },
+  { name: "Sure",            ats: "greenhouse", token: "sure" },
+  { name: "At-Bay",          ats: "greenhouse", token: "atbay" },
+  { name: "Resilience Cyber",ats: "greenhouse", token: "resilience" },
+  { name: "Cowbell Cyber",   ats: "greenhouse", token: "cowbell" },
+  { name: "Counterpart",     ats: "greenhouse", token: "counterpart" },
+  { name: "Trupanion",       ats: "greenhouse", token: "trupanion" },
+
+  // ---------- HEALTH INSURANCE / HEALTHTECH ----------
+  { name: "Oscar Health",    ats: "greenhouse", token: "hioscar" },
+  { name: "Devoted Health",  ats: "greenhouse", token: "devotedhealth" },
+  { name: "Alignment Health",ats: "greenhouse", token: "alignmenthealthcare" },
+  { name: "Cohere Health",   ats: "greenhouse", token: "coherehealth" },
+  { name: "Ribbon Health",   ats: "greenhouse", token: "ribbonhealth" },
+  { name: "Clover Health",   ats: "greenhouse", token: "cloverhealth" },
+  { name: "Cityblock Health",ats: "greenhouse", token: "cityblockhealth" },
+  { name: "Included Health", ats: "greenhouse", token: "includedhealth" },
+  { name: "Garner Health",   ats: "greenhouse", token: "garnerhealth" },
+  { name: "Sidecar Health",  ats: "greenhouse", token: "sidecarhealth" },
+
+  // ---------- FINTECH / BANKING (credit risk, treasury) ----------
+  { name: "Stripe",          ats: "greenhouse", token: "stripe" },
+  { name: "Plaid",           ats: "greenhouse", token: "plaid" },
+  { name: "Brex",            ats: "greenhouse", token: "brex" },
+  { name: "Ramp",            ats: "greenhouse", token: "ramp" },
+  { name: "Mercury",         ats: "greenhouse", token: "mercury" },
+  { name: "Modern Treasury", ats: "greenhouse", token: "moderntreasury" },
+  { name: "Affirm",          ats: "greenhouse", token: "affirm" },
+  { name: "Robinhood",       ats: "greenhouse", token: "robinhood" },
+  { name: "SoFi",            ats: "greenhouse", token: "sofi" },
+  { name: "Chime",           ats: "greenhouse", token: "chime" },
+  { name: "Marqeta",         ats: "greenhouse", token: "marqeta" },
+  { name: "Pagaya",          ats: "greenhouse", token: "pagaya" },
+  { name: "Upstart",         ats: "greenhouse", token: "upstart" },
+  { name: "Block (Square)",  ats: "greenhouse", token: "square" },
+  { name: "Wealthfront",     ats: "greenhouse", token: "wealthfront" },
+  { name: "Betterment",      ats: "greenhouse", token: "betterment" },
+  { name: "Carta",           ats: "greenhouse", token: "carta" },
+  { name: "Public",          ats: "greenhouse", token: "public" },
+  { name: "Apex Fintech",    ats: "greenhouse", token: "apexfintechsolutions" },
+  { name: "Capitalize",      ats: "greenhouse", token: "capitalize" },
+  { name: "Petal",           ats: "greenhouse", token: "petalcard" },
+  { name: "Tally",           ats: "greenhouse", token: "tallytechnologies" },
+  { name: "Dave",            ats: "greenhouse", token: "dave" },
+  { name: "MoneyLion",       ats: "greenhouse", token: "moneylion" },
+  { name: "Varo",            ats: "greenhouse", token: "varomoney" },
+
+  // ---------- CRYPTO / DIGITAL ASSETS ----------
+  { name: "Coinbase",        ats: "greenhouse", token: "coinbase" },
+  { name: "Gemini",          ats: "greenhouse", token: "gemini" },
+  { name: "Kraken",          ats: "greenhouse", token: "kraken" },
+  { name: "Anchorage Digital",ats:"greenhouse", token: "anchoragedigital" },
+  { name: "Fireblocks",      ats: "greenhouse", token: "fireblocks" },
+  { name: "Chainalysis",     ats: "greenhouse", token: "chainalysis" },
+  { name: "Circle",          ats: "greenhouse", token: "circle" },
+  { name: "Wintermute",      ats: "greenhouse", token: "wintermute" },
+  { name: "Galaxy Digital",  ats: "greenhouse", token: "galaxydigitalservicesllc" },
+
+  // ---------- QUANT TRADING (R, Python, modeling) ----------
+  { name: "Two Sigma",       ats: "greenhouse", token: "twosigma" },
+  { name: "Citadel",         ats: "greenhouse", token: "citadel" },
+  { name: "Citadel Securities",ats:"greenhouse", token: "citadelsecurities" },
+  { name: "Hudson River Trading",ats:"greenhouse",token:"hudsonrivertradingllc"},
+  { name: "Jump Trading",    ats: "greenhouse", token: "jumptrading" },
+  { name: "DRW",             ats: "greenhouse", token: "drw" },
+  { name: "Akuna Capital",   ats: "greenhouse", token: "akunacapital" },
+  { name: "Belvedere Trading",ats:"greenhouse", token: "belvederetrading" },
+  { name: "Tower Research",  ats: "greenhouse", token: "towerresearchcapital" },
+  { name: "Optiver",         ats: "greenhouse", token: "optiver" },
+  { name: "IMC Trading",     ats: "greenhouse", token: "imc" },
+  { name: "Five Rings",      ats: "greenhouse", token: "fiveringsllc" },
+  { name: "Headlands Tech",  ats: "greenhouse", token: "headlandstech" },
+  { name: "Quantlab",        ats: "greenhouse", token: "quantlabfinancial" },
+  { name: "Squarepoint",     ats: "greenhouse", token: "squarepoint" },
+  { name: "Millennium",      ats: "greenhouse", token: "millennium" },
+  { name: "Point72",         ats: "greenhouse", token: "point72" },
+  { name: "Bridgewater",     ats: "greenhouse", token: "bridgewater" },
+  { name: "AQR",             ats: "greenhouse", token: "aqrcapitalmanagement" },
+
+  // ---------- RISK / FRAUD / COMPLIANCE PLATFORMS ----------
+  { name: "Riskified",       ats: "greenhouse", token: "riskified" },
+  { name: "Sift",            ats: "greenhouse", token: "siftscience" },
+  { name: "Alloy",           ats: "greenhouse", token: "alloy" },
+  { name: "Persona",         ats: "greenhouse", token: "withpersona" },
+  { name: "Unit21",          ats: "greenhouse", token: "unit21" },
+  { name: "Sardine",         ats: "greenhouse", token: "sardine" },
+  { name: "ComplyAdvantage", ats: "greenhouse", token: "complyadvantage" },
+  { name: "Hummingbird",     ats: "greenhouse", token: "hummingbirdrx" },
+  { name: "Quantexa",        ats: "greenhouse", token: "quantexa" },
+  { name: "Socure",          ats: "greenhouse", token: "socure" },
+
+  // ---------- CLIMATE / CAT RISK MODELING ----------
+  { name: "Jupiter Intel",   ats: "greenhouse", token: "jupiterintel" },
+  { name: "Cape Analytics",  ats: "greenhouse", token: "capeanalytics" },
+  { name: "Watershed",       ats: "greenhouse", token: "watershedclimate" },
+  { name: "Persefoni",       ats: "greenhouse", token: "persefoniai" },
+
+  // ---------- DATA / ANALYTICS / AI (data analyst, modeling roles) ----------
+  { name: "Anthropic",       ats: "greenhouse", token: "anthropic" },
+  { name: "Scale AI",        ats: "greenhouse", token: "scaleai" },
+  { name: "Databricks",      ats: "greenhouse", token: "databricks" },
+  { name: "Snowflake",       ats: "greenhouse", token: "snowflake" },
+  { name: "MongoDB",         ats: "greenhouse", token: "mongodb" },
+  { name: "Confluent",       ats: "greenhouse", token: "confluent" },
+  { name: "Hex",             ats: "greenhouse", token: "hex" },
+  { name: "Mode Analytics",  ats: "greenhouse", token: "modeanalytics" },
+  { name: "Datadog",         ats: "greenhouse", token: "datadog" },
+  { name: "Palantir",        ats: "greenhouse", token: "palantirtechnologies" },
+
+  // ---------- BIG TECH on Greenhouse (have analytics/risk teams) ----------
+  { name: "Pinterest",       ats: "greenhouse", token: "pinterest" },
+  { name: "Reddit",          ats: "greenhouse", token: "reddit" },
+  { name: "Discord",         ats: "greenhouse", token: "discord" },
+  { name: "Roblox",          ats: "greenhouse", token: "roblox" },
+  { name: "Cloudflare",      ats: "greenhouse", token: "cloudflare" },
+  { name: "Notion",          ats: "greenhouse", token: "notion" },
+  { name: "Figma",           ats: "greenhouse", token: "figma" },
+  { name: "Airtable",        ats: "greenhouse", token: "airtable" },
+  { name: "HubSpot",         ats: "greenhouse", token: "hubspot" },
+  { name: "Gusto",           ats: "greenhouse", token: "gusto" },
+  { name: "DoorDash",        ats: "greenhouse", token: "doordash" },
+  { name: "Instacart",       ats: "greenhouse", token: "instacart" },
+  { name: "Lyft",            ats: "greenhouse", token: "lyft" },
+  { name: "Airbnb",          ats: "greenhouse", token: "airbnb" },
+
+  // ---------- INSURANCE-ADJACENT / RISK SAAS ----------
+  { name: "Origami Risk",    ats: "greenhouse", token: "origamirisk" },
+  { name: "Verisk",          ats: "greenhouse", token: "verisk" },
+  { name: "Duck Creek",      ats: "greenhouse", token: "duckcreektechnologies" },
+  { name: "Guidewire",       ats: "greenhouse", token: "guidewire" },
+
+  // ---------- LEVER BOARDS ----------
+  { name: "Netflix",         ats: "lever",      token: "netflix" },
+  { name: "Eventbrite",      ats: "lever",      token: "eventbrite" },
+  { name: "Mixpanel",        ats: "lever",      token: "mixpanel" },
+  { name: "KeepTruckin/Motive",ats:"lever",     token: "motive" },
+  { name: "Plaid (Lever)",   ats: "lever",      token: "plaid" },
+  { name: "Cresta",          ats: "lever",      token: "cresta" },
+  { name: "Anduril",         ats: "lever",      token: "anduril" },
+  { name: "Nuvemshop",       ats: "lever",      token: "nuvemshop" },
+  { name: "Spring Health",   ats: "lever",      token: "springhealth" },
+];
+
+// =====================================================
+// RESUME KEYWORDS — Sanni Kale (actuarial + quant finance)
+// =====================================================
+const TITLE_HIGH = [
+  "actuar", "actuary", "actuarial",
+  "quantitative", "quant ", " quant", "quant analyst", "quant researcher",
+  "credit risk", "model risk", "model validation", "model val",
+  "risk analyst", "risk associate",
+  "treasury", "capital markets",
+  "valuation", "valuations",
+  "pricing analyst", "pricing actuar",
+  "reserving", "loss reserving",
+  "catastrophe", "cat model",
+  "underwriting analyst", "underwriting actuar",
+  "insurance analyst",
+];
+// Sweet-spot seniority — ~3yrs experience = Senior Analyst / Analyst II / Associate
+const LEVEL_BOOST = [
+  "senior analyst", "senior associate",
+  "analyst ii", "analyst 2", "analyst iii", "analyst 3",
+  " ii", " iii", // matches end-of-title "Risk Analyst II"
+  "experienced analyst", "experienced associate",
+  "associate", // catches "Associate Actuary", "Credit Risk Associate" etc.
+];
+// Too junior — soft penalty (still show but lower priority)
+const LEVEL_TOO_JUNIOR = [
+  "junior ", "graduate program", "graduate scheme",
+  "trainee", "entry level", "entry-level",
+  "associate analyst", "intern ", "internship",
+  "analyst i ", "analyst 1 ", "analyst i,", "analyst i)",
+];
+const TITLE_MED = [
+  "risk ", " risk",
+  "data scientist", "data analyst", "analytics",
+  "research analyst", "investment analyst",
+  "portfolio analyst", "asset management",
+  "fixed income", "structured finance",
+  "audit", "auditor",
+  "financial analyst", "finance analyst",
+  "quantitative researcher", "quantitative developer",
+];
+const DESC_KEYWORDS = [
+  "ifrs 17", "ifrs 9", "ifrs17", "ifrs9", "aasb 17", "aasb 9",
+  "ecl", "expected credit loss", "loss given default", "lgd",
+  "probability of default", "pd model", "ead", "sicr",
+  "actuarial", "actuary", "reserving", "ibnr", "rbna",
+  "us gaap", "gaap",
+  "credit risk", "stress test", "stress testing",
+  "monte carlo", "valuation", "fair value",
+  "hedge accounting", "derivatives", "swap", "swaption",
+  "interest rate", "fx forward",
+  "bloomberg", "refinitiv", "reval", "eviews",
+  "python", "sql", "vba", " r,", " r ", " r.", " r/",
+  "insurance", "reinsurance", "underwriting",
+  "model validation", "model risk", "tier 3 model",
+  "csm", "gmm", "premium liabilities", "loss component",
+  "discount rate", "illiquidity premium",
+  "treasury", "capital markets", "capital adequacy",
+];
+const NEGATIVE = [
+  // Too senior (Sanni is ~3 yrs FT — Analyst / Senior Analyst / Associate level)
+  "director", "directors", "managing director",
+  "vice president", "vp ", "vp,", "vp-", "svp", "evp",
+  "head of", "chief ", "chief,",
+  "principal", // principal engineer/scientist/risk analyst — all 8+ yrs
+  "manager",   // catches Senior Manager, plain Manager, Engineering Manager
+  "executive director", "partner,",
+  // Wrong function entirely
+  "intern ", "internship",
+  "principal engineer", "staff engineer",
+  "senior software engineer", "senior swe",
+  "frontend", "front-end", "front end",
+  "full stack", "full-stack", "fullstack",
+  "ios engineer", "android engineer", "mobile engineer",
+  "devops", "site reliability", "sre ", "platform engineer",
+  "sales ", "marketing ", "recruiter", "recruiting",
+  "designer", "ux ", "ui designer", "graphic",
+  "customer success", "account executive", "account manager",
+  "people ops", "people partner", "talent acquisition",
+  "communications", "content writer", "copywriter",
+  "legal counsel", "paralegal",
+  "physician", "nurse", "clinical",
+];
+// US location signals
+const US_TOKENS = [
+  "united states", " us ", " us,", " us)", " us.", " usa",
+  "u.s.", "u.s,", "u.s.a",
+  "remote, us", "remote (us", "remote - us", "remote – us",
+  "remote us", "us - remote", "us-remote",
+  "new york", "nyc", "manhattan", "brooklyn",
+  "san francisco", "bay area", "palo alto", "mountain view", "menlo park",
+  "boston", "cambridge", "chicago", "austin", "seattle",
+  "denver", "atlanta", "charlotte", "hartford", "stamford",
+  "jersey city", "newark", "philadelphia", "pittsburgh", "minneapolis",
+  "des moines", "bloomington", "los angeles", "santa monica", "venice, ca",
+  "san diego", "miami", "tampa", "washington, d", "washington dc",
+  "houston", "dallas", "irvine", "phoenix", "salt lake",
+  "raleigh", "durham", "nashville", "columbus", "cleveland",
+  "st. louis", "kansas city", "indianapolis", "milwaukee", "detroit",
+  "portland", "san jose", "sunnyvale", "redwood city", "san mateo",
+  ", ny", ", nj", ", ca", ", ma", ", il", ", tx", ", ga", ", fl",
+  ", co", ", wa", ", or", ", pa", ", ct", ", mn", ", oh",
+  ", nc", ", va", ", md", ", ia", ", ut", ", az", ", mo",
+  ", in", ", wi", ", mi", ", tn", ", sc",
+];
+const NON_US_TOKENS = [
+  "india", "bangalore", "bengaluru", "hyderabad", "mumbai", "delhi", "pune", "chennai",
+  "singapore", "hong kong", "shanghai", "beijing", "tokyo", "seoul",
+  "london", "uk", "united kingdom", "ireland", "dublin",
+  "germany", "berlin", "munich", "france", "paris", "spain", "barcelona", "madrid",
+  "portugal", "lisbon", "netherlands", "amsterdam", "rotterdam",
+  "sydney", "melbourne", "brisbane", "perth", "auckland",
+  "toronto", "vancouver", "montreal", "ottawa",
+  "brazil", "são paulo", "sao paulo", "mexico city",
+  "tel aviv", "israel",
+];
+
+// =====================================================
+// SCORING
+// =====================================================
+function scoreJob(title, description) {
+  const t = (title || "").toLowerCase();
+  const d = (description || "").toLowerCase();
+  let score = 0;
+  const matched = new Set();
+
+  for (const kw of TITLE_HIGH) {
+    if (t.includes(kw)) { score += 15; matched.add(kw.trim()); }
+  }
+  for (const kw of TITLE_MED) {
+    if (t.includes(kw)) { score += 5; matched.add(kw.trim()); }
+  }
+  for (const kw of LEVEL_BOOST) {
+    if (t.includes(kw)) { score += 8; matched.add(kw.trim()); }
+  }
+  for (const kw of DESC_KEYWORDS) {
+    if (d.includes(kw)) { score += 2; }
+  }
+  for (const kw of LEVEL_TOO_JUNIOR) {
+    if (t.includes(kw)) { score -= 15; }
+  }
+  let seniorPenalty = false;
+  for (const kw of NEGATIVE) {
+    if (t.includes(kw)) {
+      score -= 100;
+      seniorPenalty = true;
+    }
+  }
+  return { score, matched: Array.from(matched).slice(0, 4), seniorPenalty };
+}
+
+function isUSLocation(loc) {
+  if (!loc) return false;
+  const l = " " + loc.toLowerCase() + " ";
+  for (const tok of NON_US_TOKENS) {
+    if (l.includes(tok)) {
+      // allow "remote, us" even if it also says e.g. "+ remote uk"
+      if (l.includes("united states") || l.includes("usa") || /,\s?(ny|ca|tx|il|ma|wa|co|ga|fl|nj|pa|ct|mn|nc|va|md)\b/.test(l)) {
+        return true;
+      }
+      return false;
+    }
+  }
+  for (const tok of US_TOKENS) {
+    if (l.includes(tok)) return true;
+  }
+  return false;
+}
+
+// =====================================================
+// FETCHERS
+// =====================================================
+const fetchErrors = [];
+
+async function fetchGreenhouse(company) {
+  try {
+    const r = await fetch(`https://boards-api.greenhouse.io/v1/boards/${company.token}/jobs?content=true`);
+    if (!r.ok) {
+      if (r.status !== 404) fetchErrors.push(`${company.name} (GH): HTTP ${r.status}`);
+      return [];
+    }
+    const data = await r.json();
+    return (data.jobs || []).map(j => ({
+      id: `gh-${company.token}-${j.id}`,
+      company: company.name,
+      title: j.title || "",
+      location: (j.location && j.location.name) || "",
+      description: j.content ? decodeHtml(j.content) : "",
+      url: j.absolute_url,
+      updated: j.updated_at || "",
+      ats: "GH",
+    }));
+  } catch (e) {
+    fetchErrors.push(`${company.name} (GH): ${e.message}`);
+    return [];
+  }
+}
+
+async function fetchLever(company) {
+  try {
+    const r = await fetch(`https://api.lever.co/v0/postings/${company.token}?mode=json`);
+    if (!r.ok) {
+      if (r.status !== 404) fetchErrors.push(`${company.name} (LV): HTTP ${r.status}`);
+      return [];
+    }
+    const data = await r.json();
+    return (data || []).map(j => ({
+      id: `lv-${company.token}-${j.id}`,
+      company: company.name,
+      title: j.text || "",
+      location: (j.categories && j.categories.location) || "",
+      description: (j.descriptionPlain || stripHtml(j.description || "")) || "",
+      url: j.hostedUrl,
+      updated: j.createdAt ? new Date(j.createdAt).toISOString() : "",
+      ats: "LV",
+    }));
+  } catch (e) {
+    fetchErrors.push(`${company.name} (LV): ${e.message}`);
+    return [];
+  }
+}
+
+function decodeHtml(html) {
+  // Greenhouse content is HTML-encoded inside JSON. Decode entities, strip tags.
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  const decoded = txt.value;
+  return stripHtml(decoded);
+}
+
+function stripHtml(html) {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return (div.textContent || div.innerText || "").replace(/\s+/g, " ").trim();
+}
+
+// concurrency-limited fetch
+async function gatherAll(companies, concurrency = 12) {
+  const all = [];
+  let done = 0;
+  const queue = [...companies];
+  const updateProgress = () => {
+    const pct = (done / companies.length) * 100;
+    document.getElementById("progress").style.width = pct + "%";
+    document.getElementById("stats").innerHTML =
+      `Fetching <b>${done}</b>/<b>${companies.length}</b> companies · <b>${all.length}</b> jobs raw`;
+  };
+  const workers = Array(concurrency).fill(null).map(async () => {
+    while (queue.length) {
+      const c = queue.shift();
+      const fn = c.ats === "greenhouse" ? fetchGreenhouse : fetchLever;
+      const jobs = await fn(c);
+      all.push(...jobs);
+      done++;
+      updateProgress();
+    }
+  });
+  await Promise.all(workers);
+  return all;
+}
+
+// =====================================================
+// RENDER
+// =====================================================
+let allJobs = [];
+let currentSort = { col: "score", dir: -1 };
+
+function rerender() {
+  const search = document.getElementById("search").value.toLowerCase().trim();
+  const loc = document.getElementById("loc-filter").value;
+  const role = document.getElementById("role-filter").value;
+  const minScore = parseInt(document.getElementById("min-score").value);
+  const hideSenior = document.getElementById("hide-senior").checked;
+
+  let filtered = allJobs.filter(j => {
+    if (hideSenior && j.seniorPenalty) return false;
+    if (showOnlyNew && !newJobIds.has(j.id)) return false;
+    if (j.score < minScore) return false;
+    if (search) {
+      const hay = `${j.title} ${j.company} ${j.location}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    if (loc === "remote" && !/remote/i.test(j.location)) return false;
+    if (loc === "ny" && !/(new york|nyc|manhattan|brooklyn|, ny\b)/i.test(j.location)) return false;
+    if (loc === "sf" && !/(san francisco|bay area|palo alto|mountain view|menlo park|sunnyvale|san jose)/i.test(j.location)) return false;
+    if (loc === "boston" && !/(boston|cambridge)/i.test(j.location)) return false;
+    if (loc === "chicago" && !/chicago/i.test(j.location)) return false;
+    if (loc === "hartford" && !/(hartford|stamford|, ct\b|connecticut)/i.test(j.location)) return false;
+    if (loc === "texas" && !/(austin|houston|dallas|, tx\b|texas)/i.test(j.location)) return false;
+    if (role && !j.title.toLowerCase().includes(role)) return false;
+    return true;
+  });
+
+  // sort
+  filtered.sort((a, b) => {
+    const c = currentSort.col;
+    let av = a[c], bv = b[c];
+    if (c === "score") return (bv - av) * (currentSort.dir === -1 ? 1 : -1);
+    if (c === "updated") {
+      av = av ? new Date(av).getTime() : 0;
+      bv = bv ? new Date(bv).getTime() : 0;
+      return (bv - av) * (currentSort.dir === -1 ? 1 : -1);
+    }
+    av = String(av || "").toLowerCase(); bv = String(bv || "").toLowerCase();
+    return av.localeCompare(bv) * (currentSort.dir === -1 ? -1 : 1);
+  });
+
+  document.getElementById("stats").innerHTML =
+    `<b>${filtered.length}</b> matches · <b>${allJobs.length}</b> US jobs · <b>${COMPANIES.length}</b> companies polled`;
+
+  const tbody = document.getElementById("rows");
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">No matches with current filters. Try lowering the min score or widening the location filter.</td></tr>';
+    return;
+  }
+  const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "2-digit" });
+  const saved = loadSaved();
+  const appliedSet = appliedJobIds();
+  tbody.innerHTML = filtered.slice(0, 500).map(j => {
+    const sCls = j.score >= 20 ? "score-high" : j.score >= 10 ? "score-med" : "score-low";
+    const dt = j.updated ? fmt.format(new Date(j.updated)) : "—";
+    const kw = (j.matched || []).map(k => `<span class="matched-kw">${escapeHtml(k)}</span>`).join("");
+    const starOn = saved.has(j.id) ? "on" : "";
+    const applied = appliedSet.has(j.id) ? `<span class="applied-tag">✓ Applied</span>` : "";
+    return `<tr>
+      <td><span class="score ${sCls}">${j.score}</span></td>
+      <td class="title">
+        <button class="star ${starOn}" data-job-id="${escapeHtml(j.id)}" data-action="star" title="Save for later">${saved.has(j.id) ? "★" : "☆"}</button>
+        <a href="${escapeHtml(j.url)}" target="_blank" rel="noopener">${escapeHtml(j.title)}</a>
+        <button class="prep-btn" data-job-id="${escapeHtml(j.id)}">📋 Prep</button>${applied}
+        <div>${kw}</div>
+      </td>
+      <td class="company">${escapeHtml(j.company)}<span class="ats">${j.ats}</span></td>
+      <td class="loc">${escapeHtml(j.location)}</td>
+      <td class="loc">${dt}</td>
+    </tr>`;
+  }).join("");
+
+  // wire prep buttons
+  document.querySelectorAll("#rows .prep-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.jobId;
+      const job = allJobs.find(j => j.id === id);
+      if (job) openPrep(job);
+    });
+  });
+  // wire star buttons
+  document.querySelectorAll('#rows [data-action="star"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.jobId;
+      const set = loadSaved();
+      if (set.has(id)) { set.delete(id); btn.textContent = "☆"; btn.classList.remove("on"); }
+      else { set.add(id); btn.textContent = "★"; btn.classList.add("on"); }
+      saveSavedSet(set);
+      document.getElementById("tab-pill-saved").textContent = set.size;
+    });
+  });
+  // update search pill
+  document.getElementById("tab-pill-search").textContent = filtered.length;
+
+  // update sort arrows
+  document.querySelectorAll("th[data-sort]").forEach(th => {
+    th.classList.remove("sorted");
+    const arr = th.querySelector(".arr");
+    if (arr) arr.textContent = "";
+    if (th.dataset.sort === currentSort.col) {
+      th.classList.add("sorted");
+      if (arr) arr.textContent = currentSort.dir === -1 ? "↓" : "↑";
+    }
+  });
+
+  // persist filters
+  try {
+    localStorage.setItem("sanni-filters", JSON.stringify({
+      search: document.getElementById("search").value,
+      loc, role, minScore,
+      sort: currentSort,
+    }));
+  } catch (e) {}
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+// =====================================================
+// STORAGE — tracker + saved jobs
+// =====================================================
+const TRACKER_KEY = "sanni-tracker-v1";
+const SAVED_KEY = "sanni-saved-v1";
+const SNAPSHOT_KEY = "sanni-snapshot-v1";
+
+function loadSnapshot() {
+  try { return JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "null"); }
+  catch (e) { return null; }
+}
+function saveSnapshot(snap) {
+  try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snap)); }
+  catch (e) {}
+}
+let newJobIds = new Set();
+let showOnlyNew = false;
+
+function loadTracker() {
+  try { return JSON.parse(localStorage.getItem(TRACKER_KEY) || "[]"); }
+  catch (e) { return []; }
+}
+function saveTracker(arr) {
+  try { localStorage.setItem(TRACKER_KEY, JSON.stringify(arr)); }
+  catch (e) { console.warn("save failed", e); }
+}
+function loadSaved() {
+  try { return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || "[]")); }
+  catch (e) { return new Set(); }
+}
+function saveSavedSet(set) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify([...set])); }
+  catch (e) { console.warn("save failed", e); }
+}
+
+function genId() {
+  return (crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : "id-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function daysSince(iso) {
+  if (!iso) return 0;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
+function appliedJobIds() {
+  return new Set(loadTracker().map(t => t.jobId).filter(Boolean));
+}
+
+function addJobToTracker(job, extras = {}) {
+  const arr = loadTracker();
+  // dedupe by jobId
+  if (job.id && arr.some(t => t.jobId === job.id)) {
+    return { added: false, existing: true };
+  }
+  arr.unshift({
+    id: genId(),
+    jobId: job.id || "",
+    company: job.company,
+    title: job.title,
+    location: job.location || "",
+    url: job.url || "",
+    appliedDate: todayISO(),
+    status: "applied",
+    contactName: "",
+    contactEmail: "",
+    notes: "",
+    nextFollowup: "",
+    ...extras,
+  });
+  saveTracker(arr);
+  return { added: true };
+}
+
+function updateTrackerEntry(id, patch) {
+  const arr = loadTracker();
+  const i = arr.findIndex(t => t.id === id);
+  if (i < 0) return;
+  arr[i] = { ...arr[i], ...patch };
+  saveTracker(arr);
+}
+
+function deleteTrackerEntry(id) {
+  saveTracker(loadTracker().filter(t => t.id !== id));
+}
+
+// =====================================================
+// PROMPT BUILDER + MODAL
+// =====================================================
+function buildResumePrompt(job) {
+  return `You're rewriting Sannidhi Kale's resume to be tailored and ATS-optimized for ONE specific job. She's an Australian actuarial / quant finance analyst (3+ years FT at Deloitte), E-3 visa eligible, applying for US roles.
+
+=== HER MASTER RESUME ===
+${SANNI_RESUME}
+
+=== TARGET JOB ===
+Company: ${job.company}
+Title: ${job.title}
+Location: ${job.location}
+
+Description:
+${job.description || "(description not available — infer from title/company)"}
+
+=== INSTRUCTIONS ===
+
+Rewrite her resume specifically for this role. The output must be a complete, ready-to-use resume in plain text (not just edits or notes). Apply these principles:
+
+1. KEYWORD ALIGNMENT (most important)
+   - Pull keywords and skills directly from the JD and weave them into her bullet points where they truthfully apply. Don't invent skills she doesn't have, but reframe existing experience using the JD's language (e.g., if JD says "CECL" and her resume says "ECL/IFRS 9", change to "ECL / IFRS 9 (analog to US CECL)").
+   - Update her Skills section so the technologies/methods listed in the JD appear first if she has them.
+
+2. BULLET REORDERING
+   - For each role on her resume, reorder bullets so the JD-relevant ones come first.
+   - Drop bullets that aren't relevant to this JD (e.g., if applying for a quant trading role, drop the forensic advisory bullet from her Treasury role).
+   - Keep each role to its 3–5 strongest bullets for this JD.
+
+3. PROFESSIONAL SUMMARY REWRITE
+   - Rewrite the 3-line summary so the first sentence directly mirrors the JD's seniority + function (e.g., "Senior Actuarial Analyst with 3+ years auditing IFRS 17 reserves and validating Tier 3 models …").
+   - Include the E-3 visa note inline in the summary: "Australian citizen, work-authorized in the US on the E-3 visa."
+
+4. METRICS PRESERVATION
+   - Keep her quantified wins (80% runtime reduction; Tier 3 model validation; multi-year/portfolio scope) but recast them in the JD's domain language.
+
+5. FORMAT
+   - Output as plain text formatted like a real resume: name + contact at top, summary, skills, experience (reverse chronological), education, qualifications, work authorization.
+   - Don't use markdown headers like "##" — use ALL CAPS section headers as is standard for ATS resumes.
+   - Don't use tables or columns (ATS parsers break on them).
+   - One page if possible (~450–500 words).
+
+6. INTEGRITY
+   - Don't fabricate any skills, certifications, dates, or accomplishments.
+   - If the JD asks for skills she doesn't have, simply omit them — never claim them.
+
+Output ONLY the rewritten resume, no commentary before or after.`;
+}
+
+function buildRecruiterPrompt(job) {
+  return `You're drafting a cold outreach message for Sannidhi Kale — an Australian actuarial / quant finance analyst (3+ yrs at Deloitte, E-3 visa eligible) — to send to a recruiter or hiring manager at the company below.
+
+=== HER PROFILE (1-paragraph) ===
+Australian actuarial analyst at Deloitte Melbourne with 3+ years across IFRS 17 audit, credit risk modeling (ECL/PD/LGD), Tier 3 model validation, derivatives valuation, and credit risk stress testing. Strong in R, Python, SQL. Engaged by Deloitte US on a cross-jurisdictional IFRS 17 / US GAAP project. Open to US relocation on the E-3 visa.
+
+=== TARGET COMPANY/ROLE ===
+Company: ${job.company}
+Title: ${job.title}
+Location: ${job.location}
+URL: ${job.url}
+
+JD excerpt:
+${(job.description || "").slice(0, 1500)}
+
+=== PLEASE WRITE THREE VERSIONS ===
+
+## VERSION A — LinkedIn DM to recruiter (≤300 chars)
+Tight, casual, ends with a clear ask (15-min call or pointer to apply).
+
+## VERSION B — LinkedIn DM to hiring manager (≤500 chars)
+Slightly warmer, references something specific about the role/team that suggests she's done her homework, ends with a soft ask.
+
+## VERSION C — Cold email (subject + body, ~120 words body)
+Subject line that earns the open. Body opens with a specific hook tied to the role/company, then 2–3 short paragraphs covering her strongest matching experience, the E-3 visa as a non-blocker, and a clear ask (15-min chat / forward to relevant hiring manager).
+
+Required for ALL versions:
+- Mention E-3 visa naturally in a way that REMOVES the visa as a recruiter objection. Phrase it as: "Authorized to work in the US on the E-3 visa — Australian-only pathway, no H-1B lottery, ~3 week processing."
+- No "I hope this finds you well."
+- No corporate AI-speak ("synergies", "leverage", "passionate about your mission").
+- British/Australian spelling.
+- First-person, professional but human.
+
+Output the three versions as plain text with "## VERSION A" / "## VERSION B" / "## VERSION C" headings.`;
+}
+
+function buildPrompt(job) {
+  return `You're helping Sannidhi Kale — an Australian actuarial analyst applying for US roles on the E-3 visa — draft a tailored application package.
+
+=== HER RESUME ===
+${SANNI_RESUME}
+
+=== JOB POSTING ===
+Company: ${job.company}
+Title: ${job.title}
+Location: ${job.location}
+URL: ${job.url}
+
+Description:
+${job.description || "(description not available — infer from title/company)"}
+
+=== PLEASE WRITE ===
+
+## 1. COVER LETTER (4–5 short paragraphs, ~300 words total)
+
+- Paragraph 1: open with ONE specific reason this company or role excites her — reference something concrete from the JD or company (a product, methodology, market, recent move).
+- Paragraph 2: lead with her strongest matching experience for THIS role — pull from IFRS 17 audit, Tier 3 model validation, credit risk stress testing, ECL/PD/LGD work, or derivatives valuation, whichever fits best. Be specific about scale and impact.
+- Paragraph 3: a second supporting strength + her R-automation impact (migrated profit-attribution from Excel/VBA to R, cut runtime 80%).
+- Paragraph 4: proactive visa framing — exactly this sentence, adapted lightly:
+    "I am an Australian citizen authorized to work in the US on the E-3 visa — an Australian-only pathway that processes in ~2–3 weeks, requires no H-1B lottery, and your existing immigration counsel can handle as a routine filing."
+- Paragraph 5: short, confident close. One line.
+
+Constraints:
+- No "I am writing to apply for…" openers.
+- No "I would be a great fit" filler.
+- No em-dash-heavy AI-isms.
+- Use British/Australian spelling where natural to her (programme, organisation) — she's Australian.
+- Plain prose, no bullets in the cover letter.
+
+## 2. SHORT-ANSWER RESPONSES (1–3 sentences each)
+- Why this company?
+- Why this role?
+- What is your greatest strength relevant to this role?
+- Describe a relevant project from your experience.
+- What are you looking for in your next role?
+
+## 3. ELEVATOR PITCH (≤40 words)
+A LinkedIn-style 1-line intro she can use in recruiter screens.
+
+## 4. SUGGESTED SALARY RANGE
+Based on the title, location, and company stage — suggest a USD base salary range (and total comp range if equity is likely) appropriate for her ~3 years of experience. Cite a quick rationale.
+
+Output everything as plain text with clear "##" headings. No emoji.`;
+}
+
+let currentJob = null;
+function openPrep(job) {
+  currentJob = job;
+  document.getElementById("m-title").textContent = job.title;
+  document.getElementById("m-meta").textContent =
+    `${job.company} · ${job.location || "—"}${job.updated ? " · posted " + new Date(job.updated).toLocaleDateString() : ""}`;
+  document.getElementById("info-name").textContent = SANNI.name;
+  document.getElementById("info-email").textContent = SANNI.email;
+  document.getElementById("info-phone").textContent = SANNI.phone;
+  document.getElementById("info-linkedin").textContent = SANNI.linkedin;
+  document.getElementById("info-location").textContent = SANNI.location;
+  document.getElementById("info-authorized").textContent = SANNI.authorized;
+  document.getElementById("info-sponsor-short").textContent = SANNI.sponsorShort;
+  document.getElementById("info-sponsor-long").textContent = SANNI.sponsorLong;
+  document.getElementById("info-start").textContent = SANNI.start;
+  document.getElementById("info-notice").textContent = SANNI.notice;
+  document.getElementById("info-reloc").textContent = SANNI.relocation;
+  document.getElementById("m-jd").textContent = job.description
+    ? job.description
+    : "(JD text wasn't returned by the ATS — click 'Open application page' to read it in full.)";
+  document.getElementById("m-apply").href = job.url;
+  // research links
+  const companyQ = encodeURIComponent(job.company);
+  document.getElementById("link-glassdoor").href = `https://www.glassdoor.com/Search/results.htm?keyword=${companyQ}`;
+  document.getElementById("link-levels").href = `https://www.levels.fyi/companies?search=${companyQ}`;
+  document.getElementById("link-linkedin").href = `https://www.linkedin.com/company/${encodeURIComponent(job.company.toLowerCase().replace(/\s+/g, "-"))}`;
+  document.getElementById("link-blind").href = `https://www.teamblind.com/search/${companyQ}`;
+  // tracker indicator reset
+  document.getElementById("tracker-success").classList.remove("show");
+  const applied = appliedJobIds().has(job.id);
+  const trackerBtn = document.getElementById("m-add-tracker");
+  if (applied) {
+    trackerBtn.textContent = "✓ Already in tracker";
+    trackerBtn.disabled = true;
+  } else {
+    trackerBtn.textContent = "+ Mark as applied (add to tracker)";
+    trackerBtn.disabled = false;
+  }
+  document.getElementById("modal").classList.add("show");
+  document.getElementById("modal-bd").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("show");
+  document.getElementById("modal-bd").classList.remove("show");
+  document.body.style.overflow = "";
+  currentJob = null;
+}
+
+// =====================================================
+// TOAST
+// =====================================================
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+}
+
+// =====================================================
+// TABS
+// =====================================================
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.view === name));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === `view-${name}`));
+  if (name === "tracker") renderTracker();
+  if (name === "saved") renderSaved();
+  try { localStorage.setItem("sanni-tab", name); } catch (e) {}
+}
+
+// =====================================================
+// TRACKER RENDER
+// =====================================================
+const STATUS_FLOW = ["applied", "screen", "interview", "onsite", "offer"];
+const STATUS_LABELS = {
+  applied: "Applied", screen: "Screen", interview: "Interview",
+  onsite: "Onsite", offer: "Offer",
+  rejected: "Rejected", ghosted: "Ghosted", withdrawn: "Withdrawn",
+};
+
+function renderTracker() {
+  const arr = loadTracker();
+  document.getElementById("tab-pill-tracker").textContent = arr.length;
+
+  // stats
+  const counts = {};
+  for (const t of arr) counts[t.status] = (counts[t.status] || 0) + 1;
+  const total = arr.length;
+  const active = arr.filter(t => !["rejected", "ghosted", "withdrawn"].includes(t.status)).length;
+  const responded = arr.filter(t => !["applied", "ghosted"].includes(t.status)).length;
+  const respRate = total ? Math.round(responded / total * 100) : 0;
+  const offers = counts.offer || 0;
+
+  document.getElementById("stat-grid").innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="label">Total apps</div></div>
+    <div class="stat-card"><div class="num">${active}</div><div class="label">Active pipeline</div><div class="sub2">applied → onsite</div></div>
+    <div class="stat-card"><div class="num">${counts.screen || 0}</div><div class="label">Screens</div></div>
+    <div class="stat-card"><div class="num">${(counts.interview || 0) + (counts.onsite || 0)}</div><div class="label">Interviews</div></div>
+    <div class="stat-card"><div class="num">${offers}</div><div class="label">Offers</div></div>
+    <div class="stat-card"><div class="num ${respRate < 20 ? 'dim' : ''}">${respRate}%</div><div class="label">Response rate</div><div class="sub2">excl. ghosted</div></div>
+  `;
+
+  // table
+  const filter = document.getElementById("tracker-status-filter").value;
+  let rows = arr;
+  if (filter === "active") rows = rows.filter(t => !["rejected", "ghosted", "withdrawn"].includes(t.status));
+  else if (filter) rows = rows.filter(t => t.status === filter);
+
+  // sort: by next followup if present, then by daysSinceApplied desc
+  rows.sort((a, b) => {
+    if (a.nextFollowup && b.nextFollowup) return a.nextFollowup.localeCompare(b.nextFollowup);
+    if (a.nextFollowup) return -1;
+    if (b.nextFollowup) return 1;
+    return (b.appliedDate || "").localeCompare(a.appliedDate || "");
+  });
+
+  document.getElementById("tracker-stats").innerHTML = `<b>${rows.length}</b> shown · <b>${total}</b> total`;
+
+  const tbody = document.getElementById("tracker-rows");
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="tracker-empty">
+      <h3>No applications yet</h3>
+      <div>Click <b>📋 Prep</b> on any job in Search, then <b>+ Mark as applied</b>.<br>
+      Or <b>+ Add application manually</b> above for jobs from other sources.</div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(t => {
+    const days = daysSince(t.appliedDate);
+    const daysCls = days > 14 ? "days-cell days-stale" : "days-cell";
+    const link = t.url ? `<a href="${escapeHtml(t.url)}" target="_blank" rel="noopener" style="color: inherit;">${escapeHtml(t.title)}</a>` : escapeHtml(t.title);
+    return `<tr data-id="${t.id}">
+      <td><span class="status status-${t.status}" data-action="cycle-status">${STATUS_LABELS[t.status] || t.status}</span></td>
+      <td>${link}</td>
+      <td>${escapeHtml(t.company)}</td>
+      <td class="days-cell">${escapeHtml(t.appliedDate || "")}</td>
+      <td class="${daysCls}">${days}d</td>
+      <td><input type="date" class="followup-input" data-action="set-followup" value="${escapeHtml(t.nextFollowup || "")}"></td>
+      <td><input type="text" class="text-input" data-action="set-notes" value="${escapeHtml(t.notes || "")}" placeholder="Recruiter, referrer, …" style="width: 100%;"></td>
+      <td class="actions">
+        <select data-action="set-status" class="text-input" style="padding: 4px 6px; font-size: 11px;">
+          ${["applied","screen","interview","onsite","offer","rejected","ghosted","withdrawn"].map(s =>
+            `<option value="${s}" ${s===t.status?"selected":""}>${STATUS_LABELS[s]}</option>`).join("")}
+        </select>
+        <button class="icon-btn del" data-action="delete" title="Delete">🗑</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  // wire row actions
+  tbody.querySelectorAll("tr").forEach(tr => {
+    const id = tr.dataset.id;
+    tr.querySelector('[data-action="cycle-status"]').addEventListener("click", () => {
+      const cur = loadTracker().find(t => t.id === id);
+      if (!cur) return;
+      const flow = STATUS_FLOW;
+      const idx = flow.indexOf(cur.status);
+      const next = idx >= 0 && idx < flow.length - 1 ? flow[idx + 1] : flow[0];
+      updateTrackerEntry(id, { status: next });
+      renderTracker();
+    });
+    tr.querySelector('[data-action="set-status"]').addEventListener("change", (e) => {
+      updateTrackerEntry(id, { status: e.target.value });
+      renderTracker();
+    });
+    tr.querySelector('[data-action="set-followup"]').addEventListener("change", (e) => {
+      updateTrackerEntry(id, { nextFollowup: e.target.value });
+    });
+    tr.querySelector('[data-action="set-notes"]').addEventListener("blur", (e) => {
+      updateTrackerEntry(id, { notes: e.target.value });
+    });
+    tr.querySelector('[data-action="delete"]').addEventListener("click", () => {
+      if (confirm("Delete this application from the tracker?")) {
+        deleteTrackerEntry(id);
+        renderTracker();
+      }
+    });
+  });
+}
+
+function exportTrackerCSV() {
+  const arr = loadTracker();
+  if (!arr.length) { toast("Nothing to export"); return; }
+  const cols = ["appliedDate", "status", "company", "title", "location", "url", "nextFollowup", "notes"];
+  const escape = v => {
+    if (v == null) return "";
+    const s = String(v);
+    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+  const lines = [cols.join(",")];
+  for (const t of arr) lines.push(cols.map(c => escape(t[c])).join(","));
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `sanni-applications-${todayISO()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Exported CSV");
+}
+
+// =====================================================
+// FRESHNESS — what's new since last visit
+// =====================================================
+function computeAndRenderFreshness() {
+  const prev = loadSnapshot();
+  const currentIds = allJobs.map(j => j.id);
+  const today = todayISO();
+
+  if (prev && prev.jobIds && prev.date !== today) {
+    const prevSet = new Set(prev.jobIds);
+    newJobIds = new Set(allJobs.filter(j => !prevSet.has(j.id)).map(j => j.id));
+
+    // Filter to "interesting" new jobs (not senior+, decent score)
+    const freshGood = allJobs.filter(j =>
+      newJobIds.has(j.id) && !j.seniorPenalty && j.score >= 5
+    );
+    freshGood.sort((a, b) => b.score - a.score);
+
+    if (freshGood.length > 0) {
+      document.getElementById("fresh-banner").classList.add("show");
+      document.getElementById("fresh-count").textContent = freshGood.length;
+      document.getElementById("fresh-date").textContent = prev.date;
+
+      const top = freshGood.slice(0, 5);
+      document.getElementById("fresh-list").innerHTML = top.map(j => {
+        const sCls = j.score >= 20 ? "score-high" : j.score >= 10 ? "score-med" : "score-low";
+        return `<div class="fresh-row">
+          <span class="score ${sCls}">${j.score}</span>
+          <div class="text">
+            <a href="${escapeHtml(j.url)}" target="_blank" rel="noopener" class="t">${escapeHtml(j.title)}</a>
+            <div class="c">${escapeHtml(j.company)} · ${escapeHtml(j.location)}</div>
+          </div>
+          <button class="prep-btn" data-job-id="${escapeHtml(j.id)}">📋 Prep</button>
+        </div>`;
+      }).join("");
+
+      // wire prep buttons inside fresh banner
+      document.querySelectorAll("#fresh-list .prep-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const job = allJobs.find(j => j.id === btn.dataset.jobId);
+          if (job) openPrep(job);
+        });
+      });
+    }
+  }
+
+  // Save today's snapshot (only first time today so we keep "since yesterday")
+  if (!prev || prev.date !== today) {
+    saveSnapshot({ date: today, jobIds: currentIds });
+  }
+}
+
+// =====================================================
+// SAVED VIEW
+// =====================================================
+function renderSaved() {
+  const saved = loadSaved();
+  document.getElementById("tab-pill-saved").textContent = saved.size;
+  const jobs = allJobs.filter(j => saved.has(j.id));
+  const tbody = document.getElementById("saved-rows");
+  if (!jobs.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">No starred jobs yet. Click ⭐ on any row in Search to save it here.</td></tr>`;
+    return;
+  }
+  const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "2-digit" });
+  tbody.innerHTML = jobs.map(j => {
+    const sCls = j.score >= 20 ? "score-high" : j.score >= 10 ? "score-med" : "score-low";
+    const dt = j.updated ? fmt.format(new Date(j.updated)) : "—";
+    return `<tr>
+      <td><span class="score ${sCls}">${j.score}</span></td>
+      <td class="title">
+        <button class="star on" data-job-id="${escapeHtml(j.id)}" data-action="unstar" title="Remove from saved">★</button>
+        <a href="${escapeHtml(j.url)}" target="_blank" rel="noopener">${escapeHtml(j.title)}</a>
+        <button class="prep-btn" data-job-id="${escapeHtml(j.id)}">📋 Prep</button>
+      </td>
+      <td class="company">${escapeHtml(j.company)}<span class="ats">${j.ats}</span></td>
+      <td class="loc">${escapeHtml(j.location)}</td>
+      <td class="loc">${dt}</td>
+    </tr>`;
+  }).join("");
+  tbody.querySelectorAll(".prep-btn").forEach(btn => btn.addEventListener("click", () => {
+    const job = allJobs.find(j => j.id === btn.dataset.jobId);
+    if (job) openPrep(job);
+  }));
+  tbody.querySelectorAll('[data-action="unstar"]').forEach(btn => btn.addEventListener("click", () => {
+    const set = loadSaved();
+    set.delete(btn.dataset.jobId);
+    saveSavedSet(set);
+    renderSaved();
+    rerender();
+  }));
+}
+
+async function copyText(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) {
+      const orig = btn.textContent;
+      btn.classList.add("copied");
+      btn.textContent = "✓ Copied";
+      setTimeout(() => { btn.classList.remove("copied"); btn.textContent = orig; }, 1400);
+    }
+  } catch (e) {
+    alert("Couldn't copy to clipboard — your browser may have blocked it. Select the text manually.");
+  }
+}
+
+// =====================================================
+// INIT
+// =====================================================
+async function init() {
+  document.getElementById("company-count").textContent = COMPANIES.length;
+  document.getElementById("built-date").textContent = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  // restore filters
+  try {
+    const saved = JSON.parse(localStorage.getItem("sanni-filters") || "{}");
+    if (saved.search !== undefined) document.getElementById("search").value = saved.search;
+    if (saved.loc !== undefined) document.getElementById("loc-filter").value = saved.loc;
+    if (saved.role !== undefined) document.getElementById("role-filter").value = saved.role;
+    if (saved.minScore !== undefined) document.getElementById("min-score").value = saved.minScore;
+    if (saved.sort) currentSort = saved.sort;
+  } catch (e) {}
+
+  ["search", "loc-filter", "role-filter", "min-score"].forEach(id => {
+    document.getElementById(id).addEventListener("input", rerender);
+  });
+  document.getElementById("hide-senior").addEventListener("change", rerender);
+
+  // Modal events
+  document.getElementById("m-close").addEventListener("click", closeModal);
+  document.getElementById("modal-bd").addEventListener("click", closeModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+  document.getElementById("copy-prompt").addEventListener("click", (e) => {
+    if (currentJob) copyText(buildPrompt(currentJob), e.currentTarget);
+  });
+  document.getElementById("copy-resume-prompt").addEventListener("click", (e) => {
+    if (currentJob) copyText(buildResumePrompt(currentJob), e.currentTarget);
+  });
+  document.getElementById("copy-recruiter-prompt").addEventListener("click", (e) => {
+    if (currentJob) copyText(buildRecruiterPrompt(currentJob), e.currentTarget);
+  });
+  // Add-to-tracker from modal
+  document.getElementById("m-add-tracker").addEventListener("click", () => {
+    if (!currentJob) return;
+    const r = addJobToTracker(currentJob);
+    if (r.added) {
+      document.getElementById("tracker-success").classList.add("show");
+      const btn = document.getElementById("m-add-tracker");
+      btn.textContent = "✓ Added";
+      btn.disabled = true;
+      toast(`Added to tracker: ${currentJob.title}`);
+      // refresh underlying views
+      rerender();
+      document.getElementById("tab-pill-tracker").textContent = loadTracker().length;
+    }
+  });
+  // chip-style copy buttons
+  document.querySelectorAll(".copy-btn.small[data-copy]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const targetId = btn.dataset.copy;
+      const el = document.getElementById(targetId);
+      if (el) copyText(el.textContent, e.currentTarget);
+    });
+  });
+
+  // =====================================================
+  // TABS
+  // =====================================================
+  document.querySelectorAll(".tab").forEach(t => {
+    t.addEventListener("click", () => switchTab(t.dataset.view));
+  });
+  // restore active tab
+  try {
+    const tab = localStorage.getItem("sanni-tab");
+    if (tab && ["search", "tracker", "saved"].includes(tab)) switchTab(tab);
+  } catch (e) {}
+
+  // =====================================================
+  // TRACKER controls
+  // =====================================================
+  document.getElementById("tracker-status-filter").addEventListener("change", renderTracker);
+  document.getElementById("export-csv").addEventListener("click", exportTrackerCSV);
+
+  // Add-manual modal
+  const am = {
+    open: () => {
+      document.getElementById("am-date").value = todayISO();
+      ["am-company","am-title","am-location","am-url","am-notes"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("am-status").value = "applied";
+      document.getElementById("add-modal").classList.add("show");
+      document.getElementById("add-modal-bd").classList.add("show");
+    },
+    close: () => {
+      document.getElementById("add-modal").classList.remove("show");
+      document.getElementById("add-modal-bd").classList.remove("show");
+    },
+  };
+  document.getElementById("add-manual").addEventListener("click", am.open);
+  document.getElementById("am-close").addEventListener("click", am.close);
+  document.getElementById("am-cancel").addEventListener("click", am.close);
+  document.getElementById("add-modal-bd").addEventListener("click", am.close);
+  document.getElementById("am-save").addEventListener("click", () => {
+    const company = document.getElementById("am-company").value.trim();
+    const title = document.getElementById("am-title").value.trim();
+    if (!company || !title) { toast("Company and Title required"); return; }
+    addJobToTracker({
+      id: "manual-" + Date.now(),
+      company,
+      title,
+      location: document.getElementById("am-location").value.trim(),
+      url: document.getElementById("am-url").value.trim(),
+    }, {
+      appliedDate: document.getElementById("am-date").value || todayISO(),
+      status: document.getElementById("am-status").value,
+      notes: document.getElementById("am-notes").value.trim(),
+    });
+    am.close();
+    renderTracker();
+    toast(`Added: ${title} @ ${company}`);
+  });
+  // initial tracker pill
+  document.getElementById("tab-pill-tracker").textContent = loadTracker().length;
+  document.getElementById("tab-pill-saved").textContent = loadSaved().size;
+
+  // Fresh banner actions
+  document.getElementById("fresh-dismiss").addEventListener("click", () => {
+    document.getElementById("fresh-banner").classList.remove("show");
+  });
+  document.getElementById("fresh-show-all").addEventListener("click", (e) => {
+    e.preventDefault();
+    showOnlyNew = true;
+    document.getElementById("fresh-banner").classList.remove("show");
+    document.getElementById("min-score").value = "0";
+    document.getElementById("search").value = "";
+    rerender();
+    toast(`Showing only the ${newJobIds.size} new postings`);
+  });
+  document.querySelectorAll("th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.sort;
+      if (currentSort.col === col) currentSort.dir = -currentSort.dir;
+      else { currentSort.col = col; currentSort.dir = -1; }
+      rerender();
+    });
+  });
+  document.getElementById("reload").addEventListener("click", () => location.reload());
+
+  fetchErrors.length = 0;
+  const raw = await gatherAll(COMPANIES);
+
+  // dedupe + score + US-filter
+  const seen = new Set();
+  const uniq = [];
+  for (const j of raw) {
+    const key = `${j.company}::${j.title}::${j.location}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const { score, matched, seniorPenalty } = scoreJob(j.title, j.description);
+    // Keep senior-penalized rows so toggle can show them; drop only true non-fits
+    if (score < -50 && !seniorPenalty) continue;
+    j.score = score;
+    j.matched = matched;
+    j.seniorPenalty = seniorPenalty;
+    // keep first 6000 chars of JD for prep panel (memory-bounded)
+    j.description = j.description ? j.description.slice(0, 6000) : "";
+    if (isUSLocation(j.location)) uniq.push(j);
+  }
+  allJobs = uniq;
+
+  // surface fetch errors
+  if (fetchErrors.length) {
+    const el = document.getElementById("errors");
+    el.classList.add("show");
+    el.textContent = `Note: ${fetchErrors.length} companies returned errors (likely changed ATS providers): ${fetchErrors.slice(0, 8).join(" · ")}${fetchErrors.length > 8 ? " …" : ""}`;
+  }
+
+  document.getElementById("progress").style.width = "100%";
+  setTimeout(() => { document.getElementById("progress").style.width = "0"; }, 1200);
+  computeAndRenderFreshness();
+  rerender();
+}
+
+// init() now called after unlock
+
+// ===== GATE =====
+async function _gateSubmit() {
+  const pw = document.getElementById('gate-pw').value;
+  const err = document.getElementById('gate-error');
+  err.textContent = '';
+  try {
+    await unlockWithPassword(pw);
+    try { sessionStorage.setItem('sanni-pw', pw); } catch(e) {}
+    document.getElementById('gate').remove();
+    init();
+  } catch (e) {
+    err.textContent = 'Wrong password';
+    document.getElementById('gate-pw').value = '';
+    document.getElementById('gate-pw').focus();
+  }
+}
+document.getElementById('gate-submit').addEventListener('click', _gateSubmit);
+document.getElementById('gate-pw').addEventListener('keydown', (e) => { if (e.key === 'Enter') _gateSubmit(); });
+// Auto-unlock if password is cached in sessionStorage from earlier this session
+try {
+  const cached = sessionStorage.getItem('sanni-pw');
+  if (cached) {
+    unlockWithPassword(cached).then(() => {
+      document.getElementById('gate').remove();
+      init();
+    }).catch(() => { sessionStorage.removeItem('sanni-pw'); });
+  }
+} catch(e) {}
+</script>
+</body>
+</html>
