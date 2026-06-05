@@ -64,6 +64,72 @@
     --radius-lg: 12px;
     --radius-xl: 16px;
   }
+
+  /* ===== DARK THEME ===== */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg:          #0d1117;
+    --bg-elev:     #161b22;
+    --bg-panel:    #161b22;
+    --bg-overlay:  #161b22;
+    --bg-subtle:   #1c2128;
+    --bg-hover:    #21262d;
+
+    --border:      #30363d;
+    --border-2:    #3d444d;
+    --border-3:    #6e7681;
+
+    --text:   #e6edf3;
+    --text-2: #c9d1d9;
+    --text-3: #8b949e;
+    --text-4: #6e7681;
+
+    --accent:      #58a6ff;
+    --accent-2:    #79c0ff;
+    --accent-3:    #a5d6ff;
+    --accent-bg:   #132235;
+    --accent-bg-2: #1c3050;
+    --accent-glow: rgba(88, 166, 255, 0.25);
+
+    --success:      #3fb950;
+    --success-bg:   #122d1c;
+    --success-glow: rgba(63, 185, 80, 0.2);
+
+    --gold:      #e3b341;
+    --gold-2:    #f0c674;
+    --gold-bg:   #2d2410;
+
+    --coral:     #f85149;
+    --coral-bg:  #2d1518;
+    --lavender:  #bc8cff;
+    --lav-bg:    #221a33;
+    --sky:       #56b6e0;
+    --sky-bg:    #112634;
+    --rose:      #f778ba;
+    --rose-bg:   #2d1424;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.45), 0 20px 40px rgba(0, 0, 0, 0.55);
+    --shadow-accent: 0 4px 14px rgba(88, 166, 255, 0.3);
+  }
+  /* Dark theme — sign-in gate overrides (gate uses literal colors) */
+  :root[data-theme="dark"] #gate { background: #0d1117; }
+  :root[data-theme="dark"] .gate-card {
+    background: #161b22; border-color: #30363d;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.45), 0 20px 40px rgba(0,0,0,0.55);
+  }
+  :root[data-theme="dark"] .gate-icon { color: #58a6ff; }
+  :root[data-theme="dark"] .gate-title { color: #e6edf3; }
+  :root[data-theme="dark"] .gate-sub { color: #8b949e; }
+  :root[data-theme="dark"] #gate-pw {
+    background: #0d1117; color: #e6edf3; border-color: #3d444d;
+  }
+  :root[data-theme="dark"] #gate-pw::placeholder { color: #6e7681; }
+  :root[data-theme="dark"] #gate-pw:focus { border-color: #58a6ff; box-shadow: 0 0 0 3px #1c3050; }
+  :root[data-theme="dark"] #gate-submit { background: #1f6feb; border-color: #1f6feb; }
+  :root[data-theme="dark"] #gate-submit:hover { background: #388bfd; border-color: #388bfd; }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
@@ -743,9 +809,62 @@
     transition: opacity 0.25s, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Header toolbar (theme toggle + resume manager) */
+  header { position: relative; }
+  .top-tools {
+    position: absolute; top: 20px; right: 40px;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .top-tool-btn {
+    background: var(--bg-elev); color: var(--text-2);
+    border: 1px solid var(--border-2); border-radius: 999px;
+    padding: 7px 14px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.15s; line-height: 1;
+  }
+  .top-tool-btn:hover {
+    border-color: var(--accent); color: var(--accent); background: var(--accent-bg);
+  }
+  .top-tool-btn .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success); display: none;
+  }
+  .top-tool-btn.has-custom .dot { display: inline-block; }
+  @media (max-width: 720px) {
+    .top-tools { position: static; margin-top: 14px; }
+  }
+
+  /* Resume modal */
+  .resume-textarea {
+    width: 100%; min-height: 340px; resize: vertical;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.6;
+    background: var(--bg-elev); color: var(--text);
+    border: 1px solid var(--border-2); border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .resume-textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg-2); }
+  .resume-status {
+    font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 7px;
+  }
+  .resume-status .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; border: 1px solid transparent;
+  }
+  .resume-status .badge.custom { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+  .resume-status .badge.master { background: var(--bg-subtle); color: var(--text-3); border-color: var(--border); }
 </style>
 </head>
 <body>
+<script>
+  // Apply saved theme ASAP to avoid a flash of the wrong palette.
+  try {
+    if (localStorage.getItem("sanni-theme") === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  } catch (e) {}
+</script>
 <div id="gate">
   <div class="gate-card">
     <div class="gate-icon">
@@ -815,6 +934,10 @@
 </style>
 
 <header>
+  <div class="top-tools">
+    <button id="resume-btn" class="top-tool-btn" title="Manage the resume used in prompts"><span class="dot"></span>📄 Resume</button>
+    <button id="theme-btn" class="top-tool-btn" title="Toggle light / dark theme">🌙 Dark</button>
+  </div>
   <h1>Sanni's <span class="accent">US Job Search</span></h1>
   <div class="sub">
     Live feed across <span id="company-count">…</span> companies on Greenhouse + Lever.
@@ -1089,6 +1212,33 @@
   </div>
 </div>
 
+<!-- Resume Manager Modal -->
+<div class="modal-bd" id="resume-modal-bd"></div>
+<div class="modal" id="resume-modal" role="dialog" aria-modal="true" style="width: min(720px, 92vw);">
+  <div class="modal-head">
+    <div>
+      <h2>Your resume</h2>
+      <div class="meta">This is the resume text used in every Cover Letter, Tailored Resume, and Recruiter prompt. Paste an updated version any time.</div>
+    </div>
+    <button class="close" id="resume-close" aria-label="Close">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="resume-status" id="resume-status"></div>
+    <textarea class="resume-textarea" id="resume-textarea" placeholder="Paste your resume as plain text…"></textarea>
+    <div style="color: var(--text-3); font-size: 11.5px; line-height: 1.6;">
+      Tip: plain text works best — the prompts ask Claude/ChatGPT to reformat for each role anyway.
+      Saved only in this browser.
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="copy-btn small" id="resume-reset" title="Discard your edits and go back to the original built-in resume">↺ Reset to original</button>
+    <div style="display:flex; gap:10px;">
+      <button class="copy-btn small" id="resume-cancel">Cancel</button>
+      <button class="copy-btn" id="resume-save">Save resume</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div class="footer">
@@ -1112,6 +1262,18 @@ const ENCRYPTED = {
 };
 let SANNI = null;
 let SANNI_RESUME = null;
+
+// Resume override — a custom resume Sanni pastes in, persisted in this browser.
+// When set, it replaces the built-in master resume inside all prompts.
+const RESUME_OVERRIDE_KEY = "sanni-resume-override";
+function getResumeOverride() {
+  try { return localStorage.getItem(RESUME_OVERRIDE_KEY) || ""; }
+  catch (e) { return ""; }
+}
+function activeResume() {
+  const o = getResumeOverride();
+  return (o && o.trim()) ? o : SANNI_RESUME;
+}
 
 function _b64ToBytes(s) {
   const bin = atob(s); const arr = new Uint8Array(bin.length);
@@ -1812,7 +1974,7 @@ function buildResumePrompt(job) {
   return `You're rewriting Sannidhi Kale's resume to be tailored and ATS-optimized for ONE specific job. She's an Australian actuarial / quant finance analyst (3+ years FT at Deloitte), E-3 visa eligible, applying for US roles.
 
 === HER MASTER RESUME ===
-${SANNI_RESUME}
+${activeResume()}
 
 === TARGET JOB ===
 Company: ${job.company}
@@ -1895,7 +2057,7 @@ function buildPrompt(job) {
   return `You're helping Sannidhi Kale — an Australian actuarial analyst applying for US roles on the E-3 visa — draft a tailored application package.
 
 === HER RESUME ===
-${SANNI_RESUME}
+${activeResume()}
 
 === JOB POSTING ===
 Company: ${job.company}
@@ -2454,6 +2616,82 @@ async function init() {
 }
 
 // init() now called after unlock
+
+// =====================================================
+// THEME TOGGLE
+// =====================================================
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === "dark") root.setAttribute("data-theme", "dark");
+  else root.removeAttribute("data-theme");
+  const btn = document.getElementById("theme-btn");
+  if (btn) btn.innerHTML = theme === "dark" ? "☀️ Light" : "🌙 Dark";
+  try { localStorage.setItem("sanni-theme", theme); } catch (e) {}
+}
+(function setupTheme() {
+  let current = "light";
+  try { if (localStorage.getItem("sanni-theme") === "dark") current = "dark"; } catch (e) {}
+  applyTheme(current);
+  const btn = document.getElementById("theme-btn");
+  if (btn) btn.addEventListener("click", () => {
+    current = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(current);
+  });
+})();
+
+// =====================================================
+// RESUME MANAGER
+// =====================================================
+function refreshResumeIndicator() {
+  const btn = document.getElementById("resume-btn");
+  if (btn) btn.classList.toggle("has-custom", !!getResumeOverride().trim());
+}
+(function setupResumeManager() {
+  const open = () => {
+    const ta = document.getElementById("resume-textarea");
+    const override = getResumeOverride();
+    ta.value = (override && override.trim()) ? override : (SANNI_RESUME || "");
+    const isCustom = !!override.trim();
+    document.getElementById("resume-status").innerHTML = isCustom
+      ? `<span class="badge custom">Custom resume active</span> Prompts are using your edited version.`
+      : `<span class="badge master">Built-in resume</span> Prompts are using the original. Edit below and save to use your own.`;
+    document.getElementById("resume-modal").classList.add("show");
+    document.getElementById("resume-modal-bd").classList.add("show");
+    document.body.style.overflow = "hidden";
+  };
+  const close = () => {
+    document.getElementById("resume-modal").classList.remove("show");
+    document.getElementById("resume-modal-bd").classList.remove("show");
+    document.body.style.overflow = "";
+  };
+  const btn = document.getElementById("resume-btn");
+  if (btn) btn.addEventListener("click", () => {
+    if (!SANNI_RESUME && !getResumeOverride()) { toast("Unlock the dashboard first"); return; }
+    open();
+  });
+  document.getElementById("resume-close").addEventListener("click", close);
+  document.getElementById("resume-cancel").addEventListener("click", close);
+  document.getElementById("resume-modal-bd").addEventListener("click", close);
+  document.getElementById("resume-save").addEventListener("click", () => {
+    const val = document.getElementById("resume-textarea").value;
+    try {
+      if (val.trim()) localStorage.setItem(RESUME_OVERRIDE_KEY, val);
+      else localStorage.removeItem(RESUME_OVERRIDE_KEY);
+    } catch (e) { toast("Couldn't save — browser storage blocked"); return; }
+    refreshResumeIndicator();
+    close();
+    toast(val.trim() ? "Resume saved — prompts will use it" : "Reverted to built-in resume");
+  });
+  document.getElementById("resume-reset").addEventListener("click", () => {
+    try { localStorage.removeItem(RESUME_OVERRIDE_KEY); } catch (e) {}
+    document.getElementById("resume-textarea").value = SANNI_RESUME || "";
+    document.getElementById("resume-status").innerHTML =
+      `<span class="badge master">Built-in resume</span> Reset done — save to confirm, or just close.`;
+    refreshResumeIndicator();
+    toast("Reset to original resume");
+  });
+  refreshResumeIndicator();
+})();
 
 // ===== GATE =====
 async function _gateSubmit() {
