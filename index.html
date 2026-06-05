@@ -536,6 +536,20 @@
     vertical-align: middle;
   }
 
+  /* Experience-required badge (search rows) */
+  .exp-badge {
+    display: inline-block; padding: 2px 8px;
+    background: var(--bg-subtle); color: var(--text-3);
+    border: 1px solid var(--border); border-radius: 999px;
+    font-size: 10.5px; font-weight: 700; margin-left: 8px;
+    vertical-align: middle; letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .exp-badge.over {
+    background: var(--coral-bg); color: var(--coral);
+    border-color: var(--coral);
+  }
+
   /* Status badges (tracker) */
   .status {
     display: inline-block; padding: 4px 11px;
@@ -995,9 +1009,13 @@
     <option value="10">Min score: 10</option>
     <option value="20">Min score: 20 (strong matches)</option>
   </select>
-  <label style="display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 12px; cursor: pointer;">
+  <label style="display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 12px; cursor: pointer;" title="Hide Director / VP / Manager / Lead / Principal / Staff titles and wrong-function roles (engineering, sales, etc.)">
     <input type="checkbox" id="hide-senior" checked style="margin: 0;">
-    Hide Senior+ titles
+    Hide senior / off-target
+  </label>
+  <label style="display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 12px; cursor: pointer;" title="Hide postings whose description requires more than 5 years of experience">
+    <input type="checkbox" id="hide-experienced" checked style="margin: 0;">
+    Hide &gt;5 yrs required
   </label>
   <button id="reload">↻ Reload</button>
   <span class="stats" id="stats">Loading…</span>
@@ -1532,30 +1550,46 @@ const DESC_KEYWORDS = [
   "discount rate", "illiquidity premium",
   "treasury", "capital markets", "capital adequacy",
 ];
-const NEGATIVE = [
-  // Too senior (Sanni is ~3 yrs FT — Analyst / Senior Analyst / Associate level)
-  "director", "directors", "managing director",
+// Too senior for Sanni (~3 yrs FT — Analyst / Senior Analyst / Associate level)
+const SENIOR_TITLES = [
+  "director", "directors", "managing director", "executive director",
   "vice president", "vp ", "vp,", "vp-", "svp", "evp",
-  "head of", "chief ", "chief,",
+  "head of", "head,", "chief ", "chief,", "cfo", "cro", "cto", "ceo",
   "principal", // principal engineer/scientist/risk analyst — all 8+ yrs
   "manager",   // catches Senior Manager, plain Manager, Engineering Manager
-  "executive director", "partner,",
-  // Wrong function entirely
+  "management",
+  "lead ", " lead", "team lead", "tech lead", "technical lead",
+  "staff ", " staff",   // Staff Analyst/Engineer = senior IC track
+  "expert ", "fellow",
+  "partner,", "partner ",
+  // Roman-numeral / leveled titles that imply seniority (IV / V)
+  "analyst iv", "analyst v", "analyst 4", "analyst 5",
+  "associate iv", "associate v",
+  "engineer iv", "engineer v",
+  "specialist iv", "specialist v",
+  " iv,", " iv)", " v,", " v)", "level iv", "level v", "level 4", "level 5",
+];
+// Wrong function entirely — never relevant regardless of level
+const WRONG_FUNCTION = [
   "intern ", "internship",
-  "principal engineer", "staff engineer",
-  "senior software engineer", "senior swe",
+  "software engineer", "swe ", "swe,",
   "frontend", "front-end", "front end",
+  "back end", "back-end", "backend",
   "full stack", "full-stack", "fullstack",
   "ios engineer", "android engineer", "mobile engineer",
   "devops", "site reliability", "sre ", "platform engineer",
+  "data engineer", "ml engineer", "machine learning engineer",
   "sales ", "marketing ", "recruiter", "recruiting",
   "designer", "ux ", "ui designer", "graphic",
   "customer success", "account executive", "account manager",
   "people ops", "people partner", "talent acquisition",
   "communications", "content writer", "copywriter",
-  "legal counsel", "paralegal",
-  "physician", "nurse", "clinical",
+  "legal counsel", "paralegal", "attorney",
+  "physician", "nurse", "clinical", "pharmacist",
+  "warehouse", "driver", "technician,",
 ];
+// Max relevant years of experience — Sanni has ~3 yrs FT
+const MAX_YEARS = 5;
 // US location signals
 const US_TOKENS = [
   "united states", " us ", " us,", " us)", " us.", " usa",
@@ -1593,6 +1627,35 @@ const NON_US_TOKENS = [
 // =====================================================
 // SCORING
 // =====================================================
+// Parse the minimum years of experience a posting requires.
+// Returns a number, or null if nothing credible is found.
+// Two-tier: phrases like "minimum 7 years" / "7+ years of experience" are
+// treated as hard requirements (take the MAX of those). Looser mentions
+// ("3 years in Python") are soft (take the MIN, to avoid over-filtering).
+function extractMinYears(text) {
+  if (!text) return null;
+  const t = (" " + String(text).toLowerCase() + " ").replace(/[‒-―]/g, "-");
+  // number, optional +/plus, optional range upper bound, then years/yrs
+  const re = /(\d{1,2})\s*(?:\+|plus)?\s*(?:-|to)?\s*(?:\d{1,2})?\s*(?:\+|plus)?\s*(?:years?|yrs?)\b/g;
+  const strong = [], soft = [];
+  let m;
+  while ((m = re.exec(t)) !== null) {
+    const n = parseInt(m[1], 10);
+    if (isNaN(n) || n <= 0 || n > 30) continue;
+    const ctx = t.slice(Math.max(0, m.index - 48), Math.min(t.length, m.index + m[0].length + 60));
+    // must read like an experience requirement, not "in the next 5 years"
+    if (!/exper|background|industry|professional|relevant|minimum|at least|track record|hands-?on|working|practice|tenure|seniority|career|post[- ]?qualifi/.test(ctx)) continue;
+    if (/minimum|at least|required|requires|require |must have|years of experience|years['’]? experience|years experience|or more|\bmin\b/.test(ctx)) {
+      strong.push(n);
+    } else {
+      soft.push(n);
+    }
+  }
+  if (strong.length) return Math.max(...strong);
+  if (soft.length) return Math.min(...soft);
+  return null;
+}
+
 function scoreJob(title, description) {
   const t = (title || "").toLowerCase();
   const d = (description || "").toLowerCase();
@@ -1614,14 +1677,29 @@ function scoreJob(title, description) {
   for (const kw of LEVEL_TOO_JUNIOR) {
     if (t.includes(kw)) { score -= 15; }
   }
-  let seniorPenalty = false;
-  for (const kw of NEGATIVE) {
-    if (t.includes(kw)) {
-      score -= 100;
-      seniorPenalty = true;
-    }
+
+  let tooSenior = false, wrongFunction = false;
+  for (const kw of SENIOR_TITLES) {
+    if (t.includes(kw)) { score -= 100; tooSenior = true; }
   }
-  return { score, matched: Array.from(matched).slice(0, 4), seniorPenalty };
+  for (const kw of WRONG_FUNCTION) {
+    if (t.includes(kw)) { score -= 100; wrongFunction = true; }
+  }
+
+  // Years-of-experience gate — parsed from title + JD
+  const minYears = extractMinYears(t + ". " + d);
+  if (minYears != null && minYears > MAX_YEARS) {
+    // graduated penalty: the further past 5 yrs, the harder the hit
+    score -= 40 + (minYears - MAX_YEARS) * 8;
+    tooSenior = true;
+  }
+
+  const seniorPenalty = tooSenior || wrongFunction;
+  return {
+    score,
+    matched: Array.from(matched).slice(0, 4),
+    seniorPenalty, tooSenior, wrongFunction, minYears,
+  };
 }
 
 function isUSLocation(loc) {
@@ -1746,9 +1824,11 @@ function rerender() {
   const role = document.getElementById("role-filter").value;
   const minScore = parseInt(document.getElementById("min-score").value);
   const hideSenior = document.getElementById("hide-senior").checked;
+  const hideExperienced = document.getElementById("hide-experienced").checked;
 
   let filtered = allJobs.filter(j => {
     if (hideSenior && j.seniorPenalty) return false;
+    if (hideExperienced && j.minYears != null && j.minYears > MAX_YEARS) return false;
     if (showOnlyNew && !newJobIds.has(j.id)) return false;
     if (j.score < minScore) return false;
     if (search) {
@@ -1797,11 +1877,14 @@ function rerender() {
     const kw = (j.matched || []).map(k => `<span class="matched-kw">${escapeHtml(k)}</span>`).join("");
     const starOn = saved.has(j.id) ? "on" : "";
     const applied = appliedSet.has(j.id) ? `<span class="applied-tag">✓ Applied</span>` : "";
+    const expBadge = (j.minYears != null)
+      ? `<span class="exp-badge${j.minYears > MAX_YEARS ? " over" : ""}" title="Posting asks for ~${j.minYears} years of experience">${j.minYears}+ yrs</span>`
+      : "";
     return `<tr>
       <td><span class="score ${sCls}">${j.score}</span></td>
       <td class="title">
         <button class="star ${starOn}" data-job-id="${escapeHtml(j.id)}" data-action="star" title="Save for later">${saved.has(j.id) ? "★" : "☆"}</button>
-        <a href="${escapeHtml(j.url)}" target="_blank" rel="noopener">${escapeHtml(j.title)}</a>
+        <a href="${escapeHtml(j.url)}" target="_blank" rel="noopener">${escapeHtml(j.title)}</a>${expBadge}
         <button class="prep-btn" data-job-id="${escapeHtml(j.id)}">📋 Prep</button>${applied}
         <div>${kw}</div>
       </td>
@@ -2435,6 +2518,7 @@ async function init() {
     document.getElementById(id).addEventListener("input", rerender);
   });
   document.getElementById("hide-senior").addEventListener("change", rerender);
+  document.getElementById("hide-experienced").addEventListener("change", rerender);
 
   // Modal events
   document.getElementById("m-close").addEventListener("click", closeModal);
@@ -2567,12 +2651,15 @@ async function init() {
     const key = `${j.company}::${j.title}::${j.location}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    const { score, matched, seniorPenalty } = scoreJob(j.title, j.description);
+    const { score, matched, seniorPenalty, tooSenior, wrongFunction, minYears } = scoreJob(j.title, j.description);
     // Keep senior-penalized rows so toggle can show them; drop only true non-fits
     if (score < -50 && !seniorPenalty) continue;
     j.score = score;
     j.matched = matched;
     j.seniorPenalty = seniorPenalty;
+    j.tooSenior = tooSenior;
+    j.wrongFunction = wrongFunction;
+    j.minYears = minYears;
     // keep first 6000 chars of JD for prep panel (memory-bounded)
     j.description = j.description ? j.description.slice(0, 6000) : "";
     if (isUSLocation(j.location)) uniq.push(j);
@@ -2608,6 +2695,9 @@ async function init() {
     synth.score = sc.score;
     synth.matched = sc.matched;
     synth.seniorPenalty = sc.seniorPenalty;
+    synth.tooSenior = sc.tooSenior;
+    synth.wrongFunction = sc.wrongFunction;
+    synth.minYears = sc.minYears;
     allJobs.unshift(synth);
     _pendingLinkedInJob = null;
     openPrep(synth);
